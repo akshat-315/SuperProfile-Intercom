@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -7,53 +8,66 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionDep
 from app.errors import AppError
-from app.models import User, Workspace, WorkspaceMember, touch_last_seen
+from app.models import User, Workspace, touch_last_seen
+from app.services import workspaces
 from app.services.security import SESSION_COOKIE, read_session, utcnow
 from app.workspace_filter import all_workspaces, use_workspace
 
 NOT_SIGNED_IN = "You need to sign in to do that."
+NO_WORKSPACE = "Create or join a workspace first."
 
 
 @dataclass(frozen=True)
-class Principal:
+class SignedInUser:
     user: User
-    workspace: Workspace
-    role: str
+    workspace: Workspace | None
+    role: str | None
     db: AsyncSession
 
 
-async def current_principal(request: Request, db: SessionDep) -> Principal:
+def _not_signed_in() -> AppError:
+    return AppError("unauthenticated", NOT_SIGNED_IN, status_code=401)
+
+
+async def signed_in_user(request: Request, db: SessionDep) -> AsyncIterator[SignedInUser]:
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
-        raise AppError("unauthenticated", NOT_SIGNED_IN, status_code=401)
+        raise _not_signed_in()
 
     now = utcnow()
     payload = read_session(token, now=now)
     if payload is None:
-        raise AppError("unauthenticated", NOT_SIGNED_IN, status_code=401)
+        raise _not_signed_in()
 
-    user_id = payload["uid"]
-    workspace_id = payload["wid"]
+    with all_workspaces(reason="a person is global; their workspaces are looked up separately"):
+        user = await db.scalar(select(User).where(User.id == payload["uid"]))
+    if user is None:
+        raise _not_signed_in()
 
-    with all_workspaces(reason="the cookie names its own workspace and is checked against it"):
-        member = await db.scalar(
-            select(WorkspaceMember).where(
-                WorkspaceMember.user_id == user_id,
-                WorkspaceMember.workspace_id == workspace_id,
-            )
-        )
-    if member is None:
-        raise AppError("unauthenticated", NOT_SIGNED_IN, status_code=401)
-
-    with use_workspace(workspace_id):
-        user = await db.scalar(select(User).where(User.id == user_id))
-        workspace = await db.scalar(select(Workspace).where(Workspace.id == workspace_id))
-        if user is None or workspace is None:
-            raise AppError("unauthenticated", NOT_SIGNED_IN, status_code=401)
+    workspace_id = payload.get("wid")
+    if workspace_id is None:
         if touch_last_seen(user, now):
             await db.commit()
+        yield SignedInUser(user=user, workspace=None, role=None, db=db)
+        return
 
-    return Principal(user=user, workspace=workspace, role=member.role, db=db)
+    membership = await workspaces.membership_in(db, user, workspace_id)
+    if membership is None:
+        raise _not_signed_in()
+
+    with use_workspace(workspace_id):
+        if touch_last_seen(user, now):
+            await db.commit()
+        yield SignedInUser(user=user, workspace=membership.workspace, role=membership.role, db=db)
 
 
-CurrentUser = Annotated[Principal, Depends(current_principal)]
+SignedIn = Annotated[SignedInUser, Depends(signed_in_user)]
+
+
+async def signed_in_user_in_workspace(signed_in: SignedIn) -> SignedInUser:
+    if signed_in.workspace is None:
+        raise AppError("no_workspace", NO_WORKSPACE, status_code=409)
+    return signed_in
+
+
+InWorkspace = Annotated[SignedInUser, Depends(signed_in_user_in_workspace)]
