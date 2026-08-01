@@ -25,13 +25,15 @@ class Member:
 
 async def members(db: AsyncSession) -> list[Member]:
     rows = (
-        await db.execute(
-            select(WorkspaceMember).order_by(WorkspaceMember.joined_at)
-        )
-    ).scalars().all()
+        (await db.execute(select(WorkspaceMember).order_by(WorkspaceMember.joined_at)))
+        .scalars()
+        .all()
+    )
     if not rows:
         return []
-    with all_workspaces(reason="a person is global; the membership rows above are already filtered"):
+    with all_workspaces(
+        reason="a person is global; the membership rows above are already filtered"
+    ):
         people = {
             user.id: user
             for user in await db.scalars(
