@@ -261,14 +261,191 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conversations */
+        get: operations["list_conversations_api_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reply */
+        post: operations["reply_api_conversations__conversation_id__reply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Assign */
+        patch: operations["assign_api_conversations__conversation_id__assign_patch"];
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set Status */
+        patch: operations["set_status_api_conversations__conversation_id__status_patch"];
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Snooze */
+        patch: operations["snooze_api_conversations__conversation_id__snooze_patch"];
+        trace?: never;
+    };
+    "/api/dev/seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Seed */
+        post: operations["seed_api_dev_seed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AssignRequest */
+        AssignRequest: {
+            /** User Id */
+            user_id?: number | null;
+        };
+        /** AssigneeOut */
+        AssigneeOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
+        /** ConversationDetail */
+        ConversationDetail: {
+            conversation: components["schemas"]["ConversationRow"];
+            /** Messages */
+            messages: components["schemas"]["MessageOut"][];
+        };
+        /** ConversationList */
+        ConversationList: {
+            /** Items */
+            items: components["schemas"]["ConversationRow"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** ConversationRow */
+        ConversationRow: {
+            /** Id */
+            id: number;
+            /** Channel */
+            channel: string;
+            /** Status */
+            status: string;
+            /** Subject */
+            subject: string | null;
+            customer: components["schemas"]["CustomerOut"];
+            assignee: components["schemas"]["AssigneeOut"] | null;
+            /** Snoozed Until */
+            snoozed_until: string | null;
+            /**
+             * Last Message At
+             * Format: date-time
+             */
+            last_message_at: string;
+            /** Unread */
+            unread: number;
+            /** Preview */
+            preview: string;
+        };
         /** CreateWorkspaceRequest */
         CreateWorkspaceRequest: {
             /** Name */
             name: string;
+        };
+        /** CustomerOut */
+        CustomerOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -371,10 +548,45 @@ export interface components {
             /** Role */
             role: string;
         };
+        /** MessageOut */
+        MessageOut: {
+            /** Id */
+            id: number;
+            /** Seq */
+            seq: number;
+            /** Direction */
+            direction: string;
+            author: components["schemas"]["AssigneeOut"] | null;
+            /** Body Text */
+            body_text: string;
+            /** Client Msg Id */
+            client_msg_id: string | null;
+            /** Read At */
+            read_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** RenameWorkspaceRequest */
         RenameWorkspaceRequest: {
             /** Name */
             name: string;
+        };
+        /** ReplyRequest */
+        ReplyRequest: {
+            /** Body */
+            body: string;
+            /** Client Msg Id */
+            client_msg_id?: string | null;
+            /** Snooze Until */
+            snooze_until?: string | null;
+            /**
+             * Resolve
+             * @default false
+             */
+            resolve: boolean;
         };
         /** RoleRequest */
         RoleRequest: {
@@ -394,6 +606,21 @@ export interface components {
             password: string;
             /** Invite Code */
             invite_code?: string | null;
+        };
+        /** SnoozeRequest */
+        SnoozeRequest: {
+            /**
+             * Until
+             * Format: date-time
+             */
+            until: string;
+            /** Body */
+            body?: string | null;
+        };
+        /** StatusRequest */
+        StatusRequest: {
+            /** Status */
+            status: string;
         };
         /** SwitchWorkspaceRequest */
         SwitchWorkspaceRequest: {
@@ -919,6 +1146,227 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_api_conversations_get: {
+        parameters: {
+            query?: {
+                state?: string;
+                channel?: string | null;
+                assignee?: string | null;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conversation_api_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_api_conversations__conversation_id__reply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_api_conversations__conversation_id__assign_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_status_api_conversations__conversation_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    snooze_api_conversations__conversation_id__snooze_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnoozeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    seed_api_dev_seed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
                 };
             };
         };
