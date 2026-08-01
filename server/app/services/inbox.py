@@ -153,9 +153,7 @@ async def get_thread(db: AsyncSession, conversation_id: int, *, user: User, role
 
     messages = list(
         await db.scalars(
-            select(Message)
-            .where(Message.conversation_id == conversation.id)
-            .order_by(Message.seq)
+            select(Message).where(Message.conversation_id == conversation.id).order_by(Message.seq)
         )
     )
     authors = await _users_for(db, {m.author_user_id for m in messages})
@@ -225,9 +223,7 @@ async def reply(
 
 async def assign(db: AsyncSession, conversation: Conversation, user_id: int | None) -> None:
     if user_id is not None:
-        member = await db.scalar(
-            select(WorkspaceMember).where(WorkspaceMember.user_id == user_id)
-        )
+        member = await db.scalar(select(WorkspaceMember).where(WorkspaceMember.user_id == user_id))
         if member is None:
             raise AppError("not_in_team", NOT_IN_TEAM, status_code=404)
     conversation.assignee_user_id = user_id
