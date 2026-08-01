@@ -19,6 +19,8 @@ export function whereTo(me: Me | null): string {
     case "unverified":
     case "no-workspace":
       return ROUTES.welcome;
+    case "pick-workspace":
+      return ROUTES.workspaces;
     case "ready":
       return ROUTES.inbox;
   }

@@ -46,3 +46,4 @@ class RenameWorkspaceRequest(BaseModel):
 
 class LeaveResponse(BaseModel):
     workspace_deleted: bool
+    active_workspace_id: int | None

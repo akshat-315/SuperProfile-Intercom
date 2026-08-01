@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
 import { team, workspaces } from "@/lib/auth";
-import { ROUTES } from "@/lib/routes";
+import { whereTo } from "@/lib/routes";
 import { fetchMe } from "@/lib/session";
 
 export default function WorkspaceSettingsPage() {
@@ -46,8 +46,7 @@ export default function WorkspaceSettingsPage() {
     try {
       const result = await team.leave();
       toast.success(result.workspace_deleted ? "Workspace deleted" : "You left the workspace");
-      const me = await fetchMe();
-      router.replace(me?.memberships.length ? ROUTES.workspaces : ROUTES.welcome);
+      router.replace(whereTo(await fetchMe()));
     } catch (problem) {
       setError(problem instanceof ApiError ? problem.message : "Could not leave.");
       setLeaving(false);

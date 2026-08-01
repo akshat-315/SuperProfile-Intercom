@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { auth, invites, workspaces } from "@/lib/auth";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES, whereTo } from "@/lib/routes";
 import { type Me, fetchMe, stageOf } from "@/lib/session";
 
 const POLL_MS = 4000;
@@ -41,9 +41,8 @@ export default function WelcomePage() {
 
   useEffect(() => {
     if (loading) return;
-    if (stage === "signed-out") router.replace(ROUTES.login);
-    if (stage === "ready") router.replace(ROUTES.inbox);
-  }, [loading, stage, router]);
+    if (stage !== "unverified" && stage !== "no-workspace") router.replace(whereTo(me));
+  }, [loading, stage, me, router]);
 
   useEffect(() => {
     if (stage !== "unverified") return;

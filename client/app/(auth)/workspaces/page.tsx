@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,21 +17,31 @@ export default function WorkspacesPage() {
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState<number | null>(null);
 
+  const choose = useCallback(
+    async (id: number) => {
+      setSwitching(id);
+      await auth.switchWorkspace(id);
+      router.replace(ROUTES.inbox);
+    },
+    [router],
+  );
+
   useEffect(() => {
     fetchMe()
-      .then(setMe)
-      .finally(() => setLoading(false));
-  }, []);
+      .then(async (who) => {
+        if (who !== null && who.active_workspace === null && who.memberships.length === 1) {
+          await choose(who.memberships[0].workspace.id);
+          return;
+        }
+        setMe(who);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [choose]);
 
   useEffect(() => {
     if (!loading && me === null) router.replace(ROUTES.login);
   }, [loading, me, router]);
-
-  async function choose(id: number) {
-    setSwitching(id);
-    await auth.switchWorkspace(id);
-    router.replace(ROUTES.inbox);
-  }
 
   return (
     <Card>

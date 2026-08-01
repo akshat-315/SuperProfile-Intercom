@@ -5,13 +5,13 @@ export type Me = components["schemas"]["MeResponse"];
 export type Membership = components["schemas"]["MembershipOut"];
 export type Workspace = components["schemas"]["WorkspaceOut"];
 
-export type Stage = "signed-out" | "unverified" | "no-workspace" | "ready";
+export type Stage = "signed-out" | "unverified" | "no-workspace" | "pick-workspace" | "ready";
 
 export function stageOf(me: Me | null): Stage {
   if (me === null) return "signed-out";
   if (!me.user.email_verified) return "unverified";
-  if (me.active_workspace === null) return "no-workspace";
-  return "ready";
+  if (me.active_workspace !== null) return "ready";
+  return me.memberships.length > 0 ? "pick-workspace" : "no-workspace";
 }
 
 export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {

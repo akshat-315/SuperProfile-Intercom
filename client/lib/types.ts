@@ -323,6 +323,8 @@ export interface components {
         LeaveResponse: {
             /** Workspace Deleted */
             workspace_deleted: boolean;
+            /** Active Workspace Id */
+            active_workspace_id: number | null;
         };
         /** LoginRequest */
         LoginRequest: {
