@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import re
+import secrets
 import unicodedata
 from datetime import UTC, datetime, timedelta
 
@@ -17,7 +18,13 @@ MIN_PASSWORD_LENGTH = 8
 SESSION_TTL = timedelta(days=7)
 SESSION_COOKIE = "session"
 
+VERIFICATION_TTL = timedelta(hours=24)
+
+INVITE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"
+INVITE_CODE_LENGTH = 8
+
 _NON_SLUG = re.compile(r"[^a-z0-9]+")
+_CODE_NOISE = re.compile(r"[\s\-]+")
 
 
 def utcnow() -> datetime:
@@ -95,6 +102,26 @@ def _b64encode(raw: bytes) -> str:
 
 def _b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+
+def new_verification_token() -> str:
+    return secrets.token_hex(32)
+
+
+def verification_expiry(now: datetime) -> datetime:
+    return now + VERIFICATION_TTL
+
+
+def new_invite_code() -> str:
+    return "".join(secrets.choice(INVITE_ALPHABET) for _ in range(INVITE_CODE_LENGTH))
+
+
+def normalise_invite_code(code: str) -> str:
+    return _CODE_NOISE.sub("", code).upper()
+
+
+def format_invite_code(code: str) -> str:
+    return f"{code[:4]}-{code[4:]}" if len(code) == INVITE_CODE_LENGTH else code
 
 
 def slugify(name: str, *, fallback: str = "workspace") -> str:

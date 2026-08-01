@@ -31,6 +31,18 @@ class Settings(BaseSettings):
     def cookie_secure(self) -> bool:
         return self.environment != "development"
 
+    @property
+    def mail_configured(self) -> bool:
+        return bool(self.resend_api_key)
+
+    @property
+    def sender(self) -> str:
+        return self.email_from or f"Intercom <noreply@{self.email_domain}>"
+
+    @property
+    def expose_dev_links(self) -> bool:
+        return not self.is_production
+
     @model_validator(mode="after")
     def _check_session_secret(self) -> Self:
         if self.is_production and len(self.session_secret) < 32:
