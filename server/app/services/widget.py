@@ -92,9 +92,7 @@ async def identify(
 
 async def _merge(db: AsyncSession, *, keep: Customer, drop: Customer) -> None:
     await db.execute(
-        update(Conversation)
-        .where(Conversation.customer_id == drop.id)
-        .values(customer_id=keep.id)
+        update(Conversation).where(Conversation.customer_id == drop.id).values(customer_id=keep.id)
     )
     await db.delete(drop)
     await db.flush()

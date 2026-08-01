@@ -1,7 +1,8 @@
+import asyncio
 import secrets
 import time
 from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import structlog
 from fastapi import FastAPI, Request, Response
@@ -10,6 +11,7 @@ from app.config import settings
 from app.errors import register_error_handlers
 from app.logging import configure_logging, get_logger
 from app.routers import auth, dev, health, inbox, invites, team, workspaces
+from app.services import jobs, outbox  # noqa: F401  handlers register on import
 
 log = get_logger(__name__)
 
@@ -18,7 +20,15 @@ log = get_logger(__name__)
 async def lifespan(_: FastAPI):
     configure_logging()
     log.info("app.started", environment=settings.environment, version=settings.version)
-    yield
+
+    stop = asyncio.Event()
+    runner = asyncio.create_task(jobs.run_forever(stop))
+    try:
+        yield
+    finally:
+        stop.set()
+        with suppress(asyncio.CancelledError):
+            await runner
 
 
 app = FastAPI(title="Intercom API", version=settings.version, lifespan=lifespan)

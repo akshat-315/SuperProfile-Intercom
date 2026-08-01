@@ -20,12 +20,8 @@ class Visitor:
     workspace_id: int
 
 
-def sign_session(
-    *, visitor_id: str, customer_id: int, workspace_id: int, now: datetime
-) -> str:
-    return _seal(
-        {"vid": visitor_id, "cid": customer_id, "wid": workspace_id}, _SESSION, now=now
-    )
+def sign_session(*, visitor_id: str, customer_id: int, workspace_id: int, now: datetime) -> str:
+    return _seal({"vid": visitor_id, "cid": customer_id, "wid": workspace_id}, _SESSION, now=now)
 
 
 def read_session(token: str, *, now: datetime) -> Visitor | None:

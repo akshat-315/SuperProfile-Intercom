@@ -50,9 +50,7 @@ async def _send_verification(db: AsyncSession, job: Job) -> None:
     token = job.payload["token"]
     with all_workspaces(reason="a person is global; this job carries no workspace"):
         user = await db.scalar(select(User).where(User.id == job.payload["user_id"]))
-        row = await db.scalar(
-            select(EmailVerification).where(EmailVerification.token == token)
-        )
+        row = await db.scalar(select(EmailVerification).where(EmailVerification.token == token))
 
     if user is None or row is None:
         log.info("outbox.verification_gone", job_id=job.id)
@@ -61,6 +59,8 @@ async def _send_verification(db: AsyncSession, job: Job) -> None:
     link = verification_link(token)
     if settings.expose_dev_links:
         log.info("mail.dev_link", kind="verification", to=user.email, link=link)
+    if not settings.mail_configured:
+        return
 
     subject, html, text = mail.verification_email(name=user.name, link=link)
     if not await mail.send(to=user.email, subject=subject, html=html, text=text):
