@@ -16,6 +16,9 @@ class User(BaseTable):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     email_verified_at: Mapped[Timestamp | None]
     last_seen_at: Mapped[Timestamp | None]
+    pending_invite_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("invites.id", ondelete="SET NULL")
+    )
 
     @property
     def email_verified(self) -> bool:
