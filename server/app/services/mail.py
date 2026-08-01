@@ -55,3 +55,23 @@ def verification_email(*, name: str, link: str) -> tuple[str, str, str]:
         f"If you did not create an account, you can ignore this email.</p>"
     )
     return subject, html, text
+
+
+def invite_email(
+    *, workspace_name: str, inviter_name: str, link: str, code: str
+) -> tuple[str, str, str]:
+    subject = f"{inviter_name} invited you to {workspace_name}"
+    text = (
+        f"{inviter_name} has invited you to join {workspace_name}.\n\n"
+        f"{link}\n\n"
+        f"Or enter this code when you sign up: {code}\n\n"
+        f"This invitation works for 7 days.\n"
+    )
+    html = (
+        f"<p><strong>{inviter_name}</strong> has invited you to join "
+        f"<strong>{workspace_name}</strong>.</p>"
+        f'<p><a href="{link}">Accept the invitation</a></p>'
+        f"<p>Or enter this code when you sign up: <strong>{code}</strong></p>"
+        f"<p>This invitation works for 7 days.</p>"
+    )
+    return subject, html, text
