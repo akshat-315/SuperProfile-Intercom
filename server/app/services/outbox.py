@@ -81,6 +81,8 @@ async def _send_invite(db: AsyncSession, job: Job) -> None:
     link = invite_link(code)
     if settings.expose_dev_links:
         log.info("mail.dev_link", kind="invite", to=email, link=link, code=format_invite_code(code))
+    if not settings.mail_configured:
+        return
 
     subject, html, text = mail.invite_email(
         workspace_name=workspace.name,
