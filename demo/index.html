@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Touchline — football kit</title>
+<style>
+  :root {
+    --ink: #14171a;
+    --muted: #6b7280;
+    --line: #e7e5e1;
+    --paper: #fbfaf8;
+    --pitch: #0b6b3a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+    position: sticky;
+    top: 0;
+  }
+  .brand { font-weight: 700; letter-spacing: .14em; font-size: 15px; }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    margin-left: 26px;
+    font-size: 14px;
+  }
+  nav a:hover { color: var(--ink); }
+  .hero {
+    padding: 84px 32px;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .hero h1 {
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    margin: 0 0 14px;
+    max-width: 14ch;
+  }
+  .hero p { color: var(--muted); margin: 0 0 26px; }
+  .cta {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px 96px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .shot {
+    height: 168px;
+    display: grid;
+    place-items: center;
+    font-size: 56px;
+  }
+  .body { padding: 14px 16px 18px; }
+  .name { font-size: 15px; margin: 0 0 2px; }
+  .price { color: var(--muted); font-size: 14px; margin: 0; }
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 28px 32px 140px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  #demo-controls {
+    position: fixed;
+    left: 18px;
+    bottom: 18px;
+    z-index: 2147483000;
+    background: #16181d;
+    color: #e6e6e6;
+    border-radius: 12px;
+    padding: 14px;
+    width: 288px;
+    font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  }
+  #demo-controls .title {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #8b8f98;
+    font-size: 10px;
+    margin-bottom: 10px;
+  }
+  #demo-controls label { display: block; color: #b9bdc6; margin-bottom: 6px; }
+  #demo-controls input {
+    width: 100%;
+    background: #0d0f13;
+    border: 1px solid #2b2f38;
+    color: #e6e6e6;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
+    margin-bottom: 10px;
+  }
+  #demo-controls button {
+    background: #e6e6e6;
+    color: #14171a;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #demo-controls .linkish {
+    background: none;
+    color: #8b8f98;
+    padding: 0;
+    font-weight: 400;
+    text-decoration: underline;
+  }
+  #demo-controls .loaded { display: flex; align-items: center; gap: 10px; }
+  #demo-controls .key { color: #7fd6a2; }
+  #demo-controls .hint { color: #8b8f98; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brand">TOUCHLINE</span>
+  <nav>
+    <a href="#">Boots</a>
+    <a href="#">Balls</a>
+    <a href="#">Kit</a>
+    <a href="#">Teamwear</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Boots that hold the ground.</h1>
+  <p>Free returns for 60 days. Next-day delivery on everything in stock.</p>
+  <a class="cta" href="#">Shop the range</a>
+</section>
+
+<section class="grid" id="products"></section>
+
+<footer>Touchline is a pretend shop. It exists to try the chat widget on.</footer>
+
+<div id="demo-controls"></div>
+
+<script>
+  const PRODUCTS = [
+    { emoji: "⚽",  name: "Pro Match Ball",      price: "£34.99", tint: "#eef4ff" },
+    { emoji: "👟",  name: "Kestrel FG Boots",    price: "£189.99", tint: "#fff1e8" },
+    { emoji: "👕",  name: "Home Jersey 25/26",   price: "£74.99", tint: "#eafaf0" },
+    { emoji: "🧤",  name: "Keeper Gloves",       price: "£54.99", tint: "#f4eefe" },
+    { emoji: "🧦",  name: "Grip Socks",          price: "£14.99", tint: "#fdf3f3" },
+    { emoji: "🎽",  name: "Training Bib",        price: "£19.99", tint: "#f2f6f2" },
+  ];
+
+  document.getElementById("products").innerHTML = PRODUCTS.map((p) => `
+    <article class="card">
+      <div class="shot" style="background:${p.tint}">${p.emoji}</div>
+      <div class="body">
+        <p class="name">${p.name}</p>
+        <p class="price">${p.price}</p>
+      </div>
+    </article>`).join("");
+
+  const APP_ORIGIN = new URLSearchParams(location.search).get("app") || "http://localhost:3000";
+  const KEY_STORE = "touchline.widget_key";
+  const VISITOR_STORE = "intercom.visitor";
+  const panel = document.getElementById("demo-controls");
+
+  function inject(key) {
+    const existing = document.getElementById("intercom-widget-script");
+    if (existing) existing.remove();
+    const script = document.createElement("script");
+    script.id = "intercom-widget-script";
+    script.src = `${APP_ORIGIN}/widget.js`;
+    script.dataset.key = key;
+    script.dataset.origin = APP_ORIGIN;
+    document.body.appendChild(script);
+  }
+
+  function short(key) {
+    return key.length > 14 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key;
+  }
+
+  function renderLoaded(key) {
+    panel.innerHTML = `
+      <div class="loaded">
+        <span class="key">${short(key)}</span>
+        <button class="linkish" id="change">change</button>
+        <button class="linkish" id="reset">reset visitor</button>
+      </div>`;
+    document.getElementById("change").onclick = () => {
+      localStorage.removeItem(KEY_STORE);
+      location.reload();
+    };
+    document.getElementById("reset").onclick = () => {
+      localStorage.removeItem(VISITOR_STORE);
+      location.reload();
+    };
+  }
+
+  function renderEmpty() {
+    panel.innerHTML = `
+      <div class="title">demo controls</div>
+      <label for="key">Widget key</label>
+      <input id="key" placeholder="wk_…" autocomplete="off" spellcheck="false" />
+      <button id="load">Load widget</button>
+      <div class="hint">Settings → Widget in the app.</div>`;
+    const input = document.getElementById("key");
+    const load = () => {
+      const key = input.value.trim();
+      if (!key) return;
+      localStorage.setItem(KEY_STORE, key);
+      renderLoaded(key);
+      inject(key);
+    };
+    document.getElementById("load").onclick = load;
+    input.onkeydown = (e) => { if (e.key === "Enter") load(); };
+  }
+
+  const saved = localStorage.getItem(KEY_STORE);
+  if (saved) {
+    renderLoaded(saved);
+    inject(saved);
+  } else {
+    renderEmpty();
+  }
+</script>
+
+</body>
+</html>
