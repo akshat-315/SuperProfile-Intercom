@@ -105,7 +105,5 @@ async def logout(response: Response) -> None:
 @router.get("/me", response_model=MeResponse)
 async def me(principal: CurrentUser) -> MeResponse:
     return _me(
-        service.SignedIn(
-            user=principal.user, workspace=principal.workspace, role=principal.role
-        )
+        service.SignedIn(user=principal.user, workspace=principal.workspace, role=principal.role)
     )

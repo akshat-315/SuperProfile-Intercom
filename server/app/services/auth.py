@@ -61,9 +61,7 @@ async def signup(
 
     with use_workspace(workspace.id):
         db.add(
-            WorkspaceMember(
-                workspace_id=workspace.id, user_id=user.id, role=ADMIN, joined_at=now
-            )
+            WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role=ADMIN, joined_at=now)
         )
         await db.flush()
 
@@ -102,9 +100,7 @@ async def login(db: AsyncSession, *, email: str, password: str) -> SignedIn:
 async def _free_slug(db: AsyncSession, workspace_name: str) -> str:
     stem = slugify(workspace_name)
     with all_workspaces(reason="a slug is unique across the whole system"):
-        taken = set(
-            await db.scalars(select(Workspace.slug).where(Workspace.slug.like(f"{stem}%")))
-        )
+        taken = set(await db.scalars(select(Workspace.slug).where(Workspace.slug.like(f"{stem}%"))))
     if stem not in taken:
         return stem
     suffix = 2
