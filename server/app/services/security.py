@@ -48,9 +48,7 @@ def password_problem(password: str) -> str | None:
     return None
 
 
-def sign_session(
-    *, user_id: int, workspace_id: int | None, role: str | None, now: datetime
-) -> str:
+def sign_session(*, user_id: int, workspace_id: int | None, role: str | None, now: datetime) -> str:
     payload: dict = {"uid": user_id, "exp": int((now + SESSION_TTL).timestamp())}
     if workspace_id is not None:
         payload["wid"] = workspace_id

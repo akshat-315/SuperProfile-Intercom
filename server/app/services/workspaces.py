@@ -59,9 +59,7 @@ async def create(db: AsyncSession, user: User, *, name: str, now: datetime) -> M
 
     with use_workspace(workspace.id):
         db.add(
-            WorkspaceMember(
-                workspace_id=workspace.id, user_id=user.id, role=ADMIN, joined_at=now
-            )
+            WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role=ADMIN, joined_at=now)
         )
         await db.flush()
 

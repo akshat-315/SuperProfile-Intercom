@@ -26,6 +26,7 @@ app = FastAPI(title="Intercom API", version=settings.version, lifespan=lifespan)
 register_error_handlers(app)
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(workspaces.router)
 
 
 @app.middleware("http")

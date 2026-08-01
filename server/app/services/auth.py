@@ -16,9 +16,7 @@ EMAIL_TAKEN = "That email already has an account. Try logging in instead."
 BAD_CREDENTIALS = "That email and password do not match."
 
 
-async def signup(
-    db: AsyncSession, *, name: str, email: str, password: str, now: datetime
-) -> User:
+async def signup(db: AsyncSession, *, name: str, email: str, password: str, now: datetime) -> User:
     email = email.strip()
 
     if (problem := password_problem(password)) is not None:
