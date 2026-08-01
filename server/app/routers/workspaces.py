@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Response, status
 
-from app.deps import Admin, SignedIn
+from app.deps import Admin, Verified
 from app.routers.auth import me_response, set_session_cookie
 from app.schemas.auth import CreateWorkspaceRequest, MeResponse
 from app.schemas.team import RenameWorkspaceRequest
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/workspaces", tags=["workspaces"])
 
 @router.post("", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
 async def create_workspace(
-    body: CreateWorkspaceRequest, response: Response, signed_in: SignedIn
+    body: CreateWorkspaceRequest, response: Response, signed_in: Verified
 ) -> MeResponse:
     active = await service.create(signed_in.db, signed_in.user, name=body.name, now=utcnow())
     await signed_in.db.commit()
