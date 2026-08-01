@@ -5,7 +5,6 @@ class SignupRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     password: str = Field(min_length=1, max_length=512)
-    workspace_name: str = Field(min_length=1, max_length=120)
 
 
 class LoginRequest(BaseModel):
@@ -13,10 +12,23 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=512)
 
 
+class CreateWorkspaceRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+class SwitchWorkspaceRequest(BaseModel):
+    workspace_id: int
+
+
 class WorkspaceOut(BaseModel):
     id: int
     name: str
     slug: str
+
+
+class MembershipOut(BaseModel):
+    workspace: WorkspaceOut
+    role: str
 
 
 class UserOut(BaseModel):
@@ -28,5 +40,6 @@ class UserOut(BaseModel):
 
 class MeResponse(BaseModel):
     user: UserOut
-    workspace: WorkspaceOut
-    role: str
+    memberships: list[MembershipOut]
+    active_workspace: WorkspaceOut | None
+    role: str | None
