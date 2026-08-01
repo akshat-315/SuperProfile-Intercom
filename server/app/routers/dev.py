@@ -123,21 +123,27 @@ async def seed(signed_in: InWorkspace) -> dict[str, int]:
         signed_in.db.add(conversation)
         await signed_in.db.flush()
 
+        unread = 0
         for seq, (side, text) in enumerate(script, start=1):
             at = started - timedelta(minutes=(len(script) - seq) * 7)
+            inbound = side == "in"
+            if inbound:
+                unread += 1
             signed_in.db.add(
                 Message(
                     workspace_id=workspace_id,
                     conversation_id=conversation.id,
                     seq=seq,
-                    direction=INBOUND if side == "in" else OUTBOUND,
-                    author_user_id=None if side == "in" else signed_in.user.id,
+                    direction=INBOUND if inbound else OUTBOUND,
+                    author_user_id=None if inbound else signed_in.user.id,
                     body_text=text,
-                    read_at=None if side == "in" else at,
+                    read_at=None if inbound else at,
                     created_at=at,
                 )
             )
         conversation.last_message_at = started
+        conversation.last_message_preview = script[-1][1][:200]
+        conversation.unread_count = unread
         made += 1
 
     await signed_in.db.commit()

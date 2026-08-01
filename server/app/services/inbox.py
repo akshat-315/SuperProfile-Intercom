@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -114,19 +114,16 @@ async def list_conversations(
     if not conversations:
         return Page(rows=[], next_cursor=None)
 
-    ids = [c.id for c in conversations]
     customers = await _customers_for(db, {c.customer_id for c in conversations})
     assignees = await _users_for(db, {c.assignee_user_id for c in conversations})
-    unread = await _unread_counts(db, ids)
-    previews = await _previews(db, ids)
 
     rows = [
         Row(
             conversation=c,
             customer=customers[c.customer_id],
             assignee=assignees.get(c.assignee_user_id) if c.assignee_user_id else None,
-            unread=unread.get(c.id, 0),
-            preview=previews.get(c.id, ""),
+            unread=c.unread_count,
+            preview=c.last_message_preview,
         )
         for c in conversations
         if c.customer_id in customers
@@ -189,34 +186,73 @@ async def reply(
         if existing is not None:
             return existing
 
-    message = Message(
-        workspace_id=require_workspace_id(),
-        conversation_id=conversation.id,
-        seq=await _next_seq(db, conversation.id),
+    message = await add_message(
+        db,
+        conversation,
         direction=OUTBOUND,
         author_user_id=author.id,
-        body_text=body.strip(),
+        body=body,
         client_msg_id=client_msg_id,
+        now=now,
     )
-    db.add(message)
-    try:
+    if conversation.status == RESOLVED:
+        conversation.status = OPEN
         await db.flush()
-    except IntegrityError:
-        await db.rollback()
-        again = await db.scalar(
-            select(Message).where(
-                Message.conversation_id == conversation.id,
-                Message.client_msg_id == client_msg_id,
-            )
+    return message
+
+
+SEQ_ATTEMPTS = 5
+
+
+async def add_message(
+    db: AsyncSession,
+    conversation: Conversation,
+    *,
+    direction: str,
+    author_user_id: int | None,
+    body: str,
+    client_msg_id: UUID | None,
+    now: datetime,
+) -> Message:
+    text = body.strip()
+    message: Message | None = None
+
+    for attempt in range(SEQ_ATTEMPTS):
+        candidate = Message(
+            workspace_id=require_workspace_id(),
+            conversation_id=conversation.id,
+            seq=await _next_seq(db, conversation.id),
+            direction=direction,
+            author_user_id=author_user_id,
+            body_text=text,
+            client_msg_id=client_msg_id,
         )
-        if again is None:
-            raise
-        return again
+        try:
+            async with db.begin_nested():
+                db.add(candidate)
+            message = candidate
+            break
+        except IntegrityError:
+            if client_msg_id is not None:
+                taken = await db.scalar(
+                    select(Message).where(
+                        Message.conversation_id == conversation.id,
+                        Message.client_msg_id == client_msg_id,
+                    )
+                )
+                if taken is not None:
+                    return taken
+            if attempt == SEQ_ATTEMPTS - 1:
+                raise
+            log.info("inbox.seq_retry", conversation_id=conversation.id, attempt=attempt + 1)
+
+    assert message is not None
 
     conversation.last_message_at = now
     conversation.snoozed_until = None
-    if conversation.status == RESOLVED:
-        conversation.status = OPEN
+    conversation.last_message_preview = text[:200]
+    if direction == INBOUND:
+        conversation.unread_count += 1
     await db.flush()
     return message
 
@@ -244,19 +280,18 @@ async def snooze(db: AsyncSession, conversation: Conversation, until: datetime) 
 
 
 async def mark_read(db: AsyncSession, conversation: Conversation, now: datetime) -> int:
-    messages = list(
-        await db.scalars(
-            select(Message).where(
-                Message.conversation_id == conversation.id,
-                Message.direction == INBOUND,
-                Message.read_at.is_(None),
-            )
+    result = await db.execute(
+        update(Message)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.direction == INBOUND,
+            Message.read_at.is_(None),
         )
+        .values(read_at=now)
     )
-    for message in messages:
-        message.read_at = now
+    conversation.unread_count = 0
     await db.flush()
-    return len(messages)
+    return result.rowcount or 0
 
 
 async def _next_seq(db: AsyncSession, conversation_id: int) -> int:
@@ -280,35 +315,6 @@ async def _users_for(db: AsyncSession, ids: set[int | None]) -> dict[int, User]:
     with all_workspaces(reason="a person is global; the rows naming them are already filtered"):
         rows = await db.scalars(select(User).where(User.id.in_(wanted)))
         return {row.id: row for row in rows}
-
-
-async def _unread_counts(db: AsyncSession, conversation_ids: list[int]) -> dict[int, int]:
-    rows = await db.execute(
-        select(Message.conversation_id, func.count(Message.id))
-        .where(
-            Message.conversation_id.in_(conversation_ids),
-            Message.direction == INBOUND,
-            Message.read_at.is_(None),
-        )
-        .group_by(Message.conversation_id)
-    )
-    return dict(rows.all())
-
-
-async def _previews(db: AsyncSession, conversation_ids: list[int]) -> dict[int, str]:
-    latest = (
-        select(Message.conversation_id, func.max(Message.seq).label("seq"))
-        .where(Message.conversation_id.in_(conversation_ids))
-        .group_by(Message.conversation_id)
-        .subquery()
-    )
-    rows = await db.execute(
-        select(Message.conversation_id, Message.body_text).join(
-            latest,
-            (Message.conversation_id == latest.c.conversation_id) & (Message.seq == latest.c.seq),
-        )
-    )
-    return {cid: body[:160] for cid, body in rows.all()}
 
 
 def _encode_cursor(at: datetime) -> str:
