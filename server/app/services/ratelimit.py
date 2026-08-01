@@ -17,6 +17,7 @@ class Limit:
 
 LOGIN = Limit(allowed=5, window_seconds=60, name="login")
 SIGNUP = Limit(allowed=3, window_seconds=60, name="signup")
+VERIFY_RESEND = Limit(allowed=3, window_seconds=3600, name="verify_resend")
 
 
 class _Counter:
