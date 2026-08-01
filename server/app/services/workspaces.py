@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.errors import AppError
 from app.logging import get_logger
 from app.models import ADMIN, User, Workspace, WorkspaceMember
-from app.services.security import slugify
+from app.services.security import new_widget_key, slugify
 from app.workspace_filter import all_workspaces, use_workspace
 
 log = get_logger(__name__)
@@ -53,7 +53,11 @@ async def membership_in(db: AsyncSession, user: User, workspace_id: int) -> Memb
 
 
 async def create(db: AsyncSession, user: User, *, name: str, now: datetime) -> Membership:
-    workspace = Workspace(name=name.strip(), slug=await _free_slug(db, name))
+    workspace = Workspace(
+        name=name.strip(),
+        slug=await _free_slug(db, name),
+        widget_key=new_widget_key(),
+    )
     db.add(workspace)
     await db.flush()
 
