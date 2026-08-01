@@ -139,16 +139,6 @@ async def switch_workspace(
     return await me_response(signed_in.db, signed_in.user, active)
 
 
-@router.post("/verify/{token}", response_model=VerifyResponse)
-async def verify(token: str, db: SessionDep) -> VerifyResponse:
-    confirmed = await verification.confirm(db, token, now=utcnow())
-    await db.commit()
-    return VerifyResponse(
-        already_verified=confirmed.already_verified,
-        joined_workspace_id=confirmed.joined_workspace_id,
-    )
-
-
 @router.post("/verify/resend", status_code=status.HTTP_204_NO_CONTENT)
 async def resend(request: Request, background: BackgroundTasks, signed_in: SignedIn) -> None:
     if signed_in.user.email_verified:
@@ -164,4 +154,14 @@ async def resend(request: Request, background: BackgroundTasks, signed_in: Signe
         name=signed_in.user.name,
         email=signed_in.user.email,
         token=token.token,
+    )
+
+
+@router.post("/verify/{token}", response_model=VerifyResponse)
+async def verify(token: str, db: SessionDep) -> VerifyResponse:
+    confirmed = await verification.confirm(db, token, now=utcnow())
+    await db.commit()
+    return VerifyResponse(
+        already_verified=confirmed.already_verified,
+        joined_workspace_id=confirmed.joined_workspace_id,
     )
