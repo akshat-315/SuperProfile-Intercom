@@ -51,9 +51,7 @@ async def confirm(db: AsyncSession, token: str, *, now: datetime) -> Confirmed:
     with all_workspaces(reason="a confirmation link is followed before any workspace is known"):
         row = await db.scalar(select(EmailVerification).where(EmailVerification.token == token))
         user = (
-            await db.scalar(select(User).where(User.id == row.user_id))
-            if row is not None
-            else None
+            await db.scalar(select(User).where(User.id == row.user_id)) if row is not None else None
         )
 
     if row is None or user is None:

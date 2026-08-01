@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -12,10 +12,11 @@ from app.schemas.auth import (
     SignupRequest,
     SwitchWorkspaceRequest,
     UserOut,
+    VerifyResponse,
     WorkspaceOut,
 )
 from app.services import auth as service
-from app.services import ratelimit, workspaces
+from app.services import invites, ratelimit, verification, workspaces
 from app.services.security import SESSION_COOKIE, SESSION_TTL, sign_session, utcnow
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -70,14 +71,24 @@ def set_session_cookie(
 
 @router.post("/signup", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
-    body: SignupRequest, request: Request, response: Response, db: SessionDep
+    body: SignupRequest,
+    request: Request,
+    response: Response,
+    background: BackgroundTasks,
+    db: SessionDep,
 ) -> MeResponse:
     ratelimit.enforce(ratelimit.SIGNUP, client_ip(request))
+    now = utcnow()
+
+    invite = await invites.by_code(db, body.invite_code, now=now) if body.invite_code else None
 
     user = await service.signup(
-        db, name=body.name, email=body.email, password=body.password, now=utcnow()
+        db, name=body.name, email=body.email, password=body.password, invite=invite, now=now
     )
+    token = await verification.issue(db, user, now=now)
     await db.commit()
+
+    background.add_task(verification.deliver, name=user.name, email=user.email, token=token.token)
 
     set_session_cookie(response, user, None)
     return await me_response(db, user, None)
@@ -126,3 +137,31 @@ async def switch_workspace(
 
     set_session_cookie(response, signed_in.user, active)
     return await me_response(signed_in.db, signed_in.user, active)
+
+
+@router.post("/verify/{token}", response_model=VerifyResponse)
+async def verify(token: str, db: SessionDep) -> VerifyResponse:
+    confirmed = await verification.confirm(db, token, now=utcnow())
+    await db.commit()
+    return VerifyResponse(
+        already_verified=confirmed.already_verified,
+        joined_workspace_id=confirmed.joined_workspace_id,
+    )
+
+
+@router.post("/verify/resend", status_code=status.HTTP_204_NO_CONTENT)
+async def resend(request: Request, background: BackgroundTasks, signed_in: SignedIn) -> None:
+    if signed_in.user.email_verified:
+        return
+
+    ratelimit.enforce(ratelimit.VERIFY_RESEND, str(signed_in.user.id))
+
+    token = await verification.issue(signed_in.db, signed_in.user, now=utcnow())
+    await signed_in.db.commit()
+
+    background.add_task(
+        verification.deliver,
+        name=signed_in.user.name,
+        email=signed_in.user.email,
+        token=token.token,
+    )

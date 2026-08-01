@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
 from app.logging import get_logger
-from app.models import User
+from app.models import Invite, User
 from app.services.security import hash_password, password_problem, verify_password
 from app.workspace_filter import all_workspaces
 
@@ -16,7 +16,15 @@ EMAIL_TAKEN = "That email already has an account. Try logging in instead."
 BAD_CREDENTIALS = "That email and password do not match."
 
 
-async def signup(db: AsyncSession, *, name: str, email: str, password: str, now: datetime) -> User:
+async def signup(
+    db: AsyncSession,
+    *,
+    name: str,
+    email: str,
+    password: str,
+    invite: Invite | None,
+    now: datetime,
+) -> User:
     email = email.strip()
 
     if (problem := password_problem(password)) is not None:
@@ -27,7 +35,12 @@ async def signup(db: AsyncSession, *, name: str, email: str, password: str, now:
     if taken:
         raise AppError("email_taken", EMAIL_TAKEN, status_code=409)
 
-    user = User(email=email, name=name.strip(), password_hash=hash_password(password))
+    user = User(
+        email=email,
+        name=name.strip(),
+        password_hash=hash_password(password),
+        pending_invite_id=invite.id if invite is not None else None,
+    )
     db.add(user)
     try:
         await db.flush()
