@@ -36,7 +36,11 @@ async def pending_for(db: AsyncSession, user: User, *, now: datetime) -> Invite 
                 return invite
         return await db.scalar(
             select(Invite)
-            .where(Invite.email == user.email, Invite.accepted_at.is_(None))
+            .where(
+                Invite.email == user.email,
+                Invite.accepted_at.is_(None),
+                Invite.expires_at > now,
+            )
             .order_by(Invite.created_at.desc())
         )
 

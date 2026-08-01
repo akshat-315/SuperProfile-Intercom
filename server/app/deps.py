@@ -66,6 +66,15 @@ async def signed_in_user(request: Request, db: SessionDep) -> AsyncIterator[Sign
 SignedIn = Annotated[SignedInUser, Depends(signed_in_user)]
 
 
+async def verified_signed_in_user(signed_in: SignedIn) -> SignedInUser:
+    if not signed_in.user.email_verified:
+        raise AppError("email_not_verified", NOT_VERIFIED, status_code=403)
+    return signed_in
+
+
+Verified = Annotated[SignedInUser, Depends(verified_signed_in_user)]
+
+
 async def signed_in_user_in_workspace(signed_in: SignedIn) -> SignedInUser:
     if signed_in.workspace is None:
         raise AppError("no_workspace", NO_WORKSPACE, status_code=409)

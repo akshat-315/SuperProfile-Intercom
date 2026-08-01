@@ -1,9 +1,10 @@
-from fastapi import APIRouter, BackgroundTasks, status
+from fastapi import APIRouter, BackgroundTasks, Response, status
 
 from app.config import settings
 from app.deps import Admin, InWorkspace, VerifiedAdmin
 from app.errors import AppError
 from app.logging import get_logger
+from app.routers.auth import set_session_cookie
 from app.schemas.team import (
     InviteOut,
     InviteRequest,
@@ -12,7 +13,7 @@ from app.schemas.team import (
     RoleRequest,
     TeamResponse,
 )
-from app.services import invites, mail, team
+from app.services import invites, mail, team, workspaces
 from app.services.security import format_invite_code, utcnow
 
 router = APIRouter(prefix="/api/team", tags=["team"])
@@ -85,10 +86,17 @@ async def invite(
 
 
 @router.delete("/me", response_model=LeaveResponse)
-async def leave(signed_in: InWorkspace) -> LeaveResponse:
+async def leave(response: Response, signed_in: InWorkspace) -> LeaveResponse:
     deleted = await team.leave(signed_in.db, signed_in.user.id)
     await signed_in.db.commit()
-    return LeaveResponse(workspace_deleted=deleted)
+
+    held = await workspaces.memberships(signed_in.db, signed_in.user)
+    set_session_cookie(response, signed_in.user, held[0] if held else None)
+
+    return LeaveResponse(
+        workspace_deleted=deleted,
+        active_workspace_id=held[0].workspace.id if held else None,
+    )
 
 
 @router.patch("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

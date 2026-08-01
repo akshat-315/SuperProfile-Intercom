@@ -69,12 +69,21 @@ async def confirm(db: AsyncSession, token: str, *, now: datetime) -> Confirmed:
     if not user.email_verified:
         user.email_verified_at = now
 
-    joined = None
-    invite = await invites.pending_for(db, user, now=now)
-    if invite is not None:
-        workspace = await invites.accept(db, user, invite, now=now)
-        joined = workspace.id
+    joined = await _join_pending_invite(db, user, now=now)
 
     await db.flush()
     log.info("auth.verified", user_id=user.id, joined_workspace_id=joined)
     return Confirmed(user=user, already_verified=False, joined_workspace_id=joined)
+
+
+async def _join_pending_invite(db: AsyncSession, user: User, *, now: datetime) -> int | None:
+    try:
+        invite = await invites.pending_for(db, user, now=now)
+        if invite is None:
+            return None
+        workspace = await invites.accept(db, user, invite, now=now)
+        return workspace.id
+    except AppError as exc:
+        log.warning("auth.verified_without_join", user_id=user.id, reason=exc.code)
+        user.pending_invite_id = None
+        return None

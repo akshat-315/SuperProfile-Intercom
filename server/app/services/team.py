@@ -56,14 +56,12 @@ async def membership_of(db: AsyncSession, user_id: int) -> WorkspaceMember:
 
 async def admin_count(db: AsyncSession) -> int:
     return (
-        await db.scalar(
-            select(func.count()).select_from(WorkspaceMember).where(WorkspaceMember.role == ADMIN)
-        )
+        await db.scalar(select(func.count(WorkspaceMember.id)).where(WorkspaceMember.role == ADMIN))
     ) or 0
 
 
 async def member_count(db: AsyncSession) -> int:
-    return (await db.scalar(select(func.count()).select_from(WorkspaceMember))) or 0
+    return (await db.scalar(select(func.count(WorkspaceMember.id)))) or 0
 
 
 async def change_role(db: AsyncSession, user_id: int, role: str) -> WorkspaceMember:
