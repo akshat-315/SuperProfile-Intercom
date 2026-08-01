@@ -18,9 +18,13 @@ import { SNOOZE_CHOICES, announceChange, inbox, snoozeUntil } from "@/lib/inbox"
 export function Composer({
   conversationId,
   onSent,
+  onSaved,
+  onFailed,
 }: {
   conversationId: number;
   onSent: (optimistic: string, clientId: string) => void;
+  onSaved: () => void;
+  onFailed: (clientId: string) => void;
 }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,9 +41,11 @@ export function Composer({
     try {
       await inbox.reply(conversationId, { body: text, client_msg_id: clientId, resolve });
       if (resolve) toast.success("Marked resolved");
+      onSaved();
       announceChange();
     } catch (problem) {
       toast.error(problem instanceof ApiError ? problem.message : "Could not send that.");
+      onFailed(clientId);
       setBody(text);
     } finally {
       setBusy(false);
@@ -53,6 +59,7 @@ export function Composer({
       await inbox.snooze(conversationId, snoozeUntil(hours), text || undefined);
       setBody("");
       toast.success(`Snoozed until ${label.toLowerCase()}`);
+      onSaved();
       announceChange();
     } catch (problem) {
       toast.error(problem instanceof ApiError ? problem.message : "Could not snooze it.");

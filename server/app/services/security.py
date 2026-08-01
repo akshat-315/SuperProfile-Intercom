@@ -104,6 +104,15 @@ def _b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
+def new_widget_key() -> str:
+    alphabet = INVITE_ALPHABET + INVITE_ALPHABET.lower()
+    return "wk_" + "".join(secrets.choice(alphabet) for _ in range(24))
+
+
+def new_visitor_id() -> str:
+    return secrets.token_urlsafe(16)
+
+
 def new_verification_token() -> str:
     return secrets.token_hex(32)
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Request, Response, status
+from fastapi import APIRouter, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -16,7 +16,7 @@ from app.schemas.auth import (
     WorkspaceOut,
 )
 from app.services import auth as service
-from app.services import invites, ratelimit, verification, workspaces
+from app.services import invites, outbox, ratelimit, verification, workspaces
 from app.services.security import SESSION_COOKIE, SESSION_TTL, sign_session, utcnow
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -71,11 +71,7 @@ def set_session_cookie(
 
 @router.post("/signup", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
-    body: SignupRequest,
-    request: Request,
-    response: Response,
-    background: BackgroundTasks,
-    db: SessionDep,
+    body: SignupRequest, request: Request, response: Response, db: SessionDep
 ) -> MeResponse:
     ratelimit.enforce(ratelimit.SIGNUP, client_ip(request))
     now = utcnow()
@@ -86,9 +82,8 @@ async def signup(
         db, name=body.name, email=body.email, password=body.password, invite=invite, now=now
     )
     token = await verification.issue(db, user, now=now)
+    await outbox.queue_verification(db, user=user, token=token.token)
     await db.commit()
-
-    background.add_task(verification.deliver, name=user.name, email=user.email, token=token.token)
 
     set_session_cookie(response, user, None)
     return await me_response(db, user, None)
@@ -140,21 +135,15 @@ async def switch_workspace(
 
 
 @router.post("/verify/resend", status_code=status.HTTP_204_NO_CONTENT)
-async def resend(request: Request, background: BackgroundTasks, signed_in: SignedIn) -> None:
+async def resend(request: Request, signed_in: SignedIn) -> None:
     if signed_in.user.email_verified:
         return
 
     ratelimit.enforce(ratelimit.VERIFY_RESEND, str(signed_in.user.id))
 
     token = await verification.issue(signed_in.db, signed_in.user, now=utcnow())
+    await outbox.queue_verification(signed_in.db, user=signed_in.user, token=token.token)
     await signed_in.db.commit()
-
-    background.add_task(
-        verification.deliver,
-        name=signed_in.user.name,
-        email=signed_in.user.email,
-        token=token.token,
-    )
 
 
 @router.post("/verify/{token}", response_model=VerifyResponse)

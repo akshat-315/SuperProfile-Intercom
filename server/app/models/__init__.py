@@ -12,6 +12,7 @@ from app.models.conversation import (
 )
 from app.models.customer import Customer
 from app.models.invite import Invite
+from app.models.job import DONE, FAILED, JOB_STATUSES, PENDING, Job, JobStatus
 from app.models.message import DIRECTIONS, INBOUND, OUTBOUND, Direction, Message
 from app.models.user import EmailVerification, User, touch_last_seen
 from app.models.workspace import ADMIN, AGENT, ROLES, Role, Workspace, WorkspaceMember
@@ -37,7 +38,13 @@ __all__ = [
     "EmailVerification",
     "HasWorkspaceId",
     "Id",
+    "DONE",
+    "FAILED",
+    "JOB_STATUSES",
+    "PENDING",
     "Invite",
+    "Job",
+    "JobStatus",
     "Message",
     "Role",
     "Status",

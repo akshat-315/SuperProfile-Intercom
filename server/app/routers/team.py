@@ -1,6 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, Response, status
+from fastapi import APIRouter, Response, status
 
-from app.config import settings
 from app.deps import Admin, InWorkspace, VerifiedAdmin
 from app.errors import AppError
 from app.logging import get_logger
@@ -13,26 +12,13 @@ from app.schemas.team import (
     RoleRequest,
     TeamResponse,
 )
-from app.services import invites, mail, team, workspaces
+from app.services import invites, outbox, team, workspaces
 from app.services.security import format_invite_code, utcnow
 
 router = APIRouter(prefix="/api/team", tags=["team"])
 log = get_logger(__name__)
 
 CANNOT_REMOVE_SELF = "Use leave instead of removing yourself."
-
-
-async def deliver_invite(*, to: str, workspace_name: str, inviter_name: str, code: str) -> None:
-    link = f"{settings.app_url.rstrip('/')}/invite/{code}"
-    if settings.expose_dev_links:
-        log.info("mail.dev_link", kind="invite", to=to, link=link, code=format_invite_code(code))
-    subject, html, text = mail.invite_email(
-        workspace_name=workspace_name,
-        inviter_name=inviter_name,
-        link=link,
-        code=format_invite_code(code),
-    )
-    await mail.send(to=to, subject=subject, html=html, text=text)
 
 
 @router.get("", response_model=TeamResponse)
@@ -55,9 +41,7 @@ async def list_team(signed_in: InWorkspace) -> TeamResponse:
 
 
 @router.post("/invite", response_model=InviteOut, status_code=status.HTTP_201_CREATED)
-async def invite(
-    body: InviteRequest, background: BackgroundTasks, signed_in: VerifiedAdmin
-) -> InviteOut:
+async def invite(body: InviteRequest, signed_in: VerifiedAdmin) -> InviteOut:
     assert signed_in.workspace is not None
     created = await invites.create(
         signed_in.db,
@@ -67,15 +51,14 @@ async def invite(
         invited_by=signed_in.user,
         now=utcnow(),
     )
-    await signed_in.db.commit()
-
-    background.add_task(
-        deliver_invite,
-        to=created.email,
-        workspace_name=signed_in.workspace.name,
-        inviter_name=signed_in.user.name,
+    await outbox.queue_invite(
+        signed_in.db,
+        email=created.email,
         code=created.code,
+        workspace_id=signed_in.workspace.id,
+        inviter_name=signed_in.user.name,
     )
+    await signed_in.db.commit()
 
     return InviteOut(
         email=created.email,

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, get_args
 
-from sqlalchemy import BigInteger, ForeignKey, Index, String
+from sqlalchemy import BigInteger, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseTable, HasWorkspaceId, Id, Timestamp
@@ -36,6 +36,8 @@ class Conversation(HasWorkspaceId, BaseTable):
     )
     snoozed_until: Mapped[Timestamp | None]
     last_message_at: Mapped[Timestamp] = mapped_column(nullable=False)
+    last_message_preview: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    unread_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     def is_snoozed(self, now: datetime) -> bool:
         return self.snoozed_until is not None and self.snoozed_until > now
