@@ -23,35 +23,69 @@ PEOPLE = [
 ]
 
 THREADS = [
-    ("Is the Guji Highland still available in 1kg?", CHAT, [
-        ("in", "Hi, is the Guji Highland still available in 1kg bags?"),
-        ("out", "Hello! Let me check the roastery stock for you."),
-        ("in", "Thanks, no rush."),
-    ]),
-    ("Grinder recommendation", EMAIL, [
-        ("in", "I bought the Encore last year and it is struggling with espresso. What would you suggest?"),
-        ("out", "The Encore really is a filter grinder. For espresso I would look at the Vario."),
-        ("in", "Does the Vario hold its setting between drinks?"),
-    ]),
-    ("Order 4182 arrived damaged", EMAIL, [
-        ("in", "The box was crushed and one bag had split. Photos attached."),
-        ("out", "I am sorry about that. I have put a replacement on today's courier run."),
-    ]),
-    ("Subscription pause", CHAT, [
-        ("in", "Can I pause my subscription for three weeks? Going away."),
-    ]),
-    ("Wrong grind size", CHAT, [
-        ("in", "I ordered whole bean but got pre ground."),
-        ("out", "That is our mistake. Replacement is going out today, keep the ground bag."),
-        ("in", "Thank you, that is very fair."),
-    ]),
-    ("Do you ship to Ireland?", CHAT, [
-        ("in", "Do you ship to Ireland, and how long does it take?"),
-    ]),
-    ("Invoice for October", EMAIL, [
-        ("in", "Could you send a VAT invoice for October please?"),
-        ("out", "Attached. Let me know if you need it addressed differently."),
-    ]),
+    (
+        "Is the Guji Highland still available in 1kg?",
+        CHAT,
+        [
+            ("in", "Hi, is the Guji Highland still available in 1kg bags?"),
+            ("out", "Hello! Let me check the roastery stock for you."),
+            ("in", "Thanks, no rush."),
+        ],
+    ),
+    (
+        "Grinder recommendation",
+        EMAIL,
+        [
+            (
+                "in",
+                "I bought the Encore last year and it struggles with espresso. Any advice?",
+            ),
+            (
+                "out",
+                "The Encore really is a filter grinder. For espresso I would look at the Vario.",
+            ),
+            ("in", "Does the Vario hold its setting between drinks?"),
+        ],
+    ),
+    (
+        "Order 4182 arrived damaged",
+        EMAIL,
+        [
+            ("in", "The box was crushed and one bag had split. Photos attached."),
+            ("out", "I am sorry about that. I have put a replacement on today's courier run."),
+        ],
+    ),
+    (
+        "Subscription pause",
+        CHAT,
+        [
+            ("in", "Can I pause my subscription for three weeks? Going away."),
+        ],
+    ),
+    (
+        "Wrong grind size",
+        CHAT,
+        [
+            ("in", "I ordered whole bean but got pre ground."),
+            ("out", "That is our mistake. Replacement is going out today, keep the ground bag."),
+            ("in", "Thank you, that is very fair."),
+        ],
+    ),
+    (
+        "Do you ship to Ireland?",
+        CHAT,
+        [
+            ("in", "Do you ship to Ireland, and how long does it take?"),
+        ],
+    ),
+    (
+        "Invoice for October",
+        EMAIL,
+        [
+            ("in", "Could you send a VAT invoice for October please?"),
+            ("out", "Attached. Let me know if you need it addressed differently."),
+        ],
+    ),
 ]
 
 
@@ -105,9 +139,6 @@ async def seed(signed_in: InWorkspace) -> dict[str, int]:
             )
         conversation.last_message_at = started
         made += 1
-
-    if len(THREADS) > 5:
-        pass
 
     await signed_in.db.commit()
     return {"conversations": made}

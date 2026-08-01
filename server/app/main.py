@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, Response
 from app.config import settings
 from app.errors import register_error_handlers
 from app.logging import configure_logging, get_logger
-from app.routers import auth, health, inbox, invites, team, workspaces
+from app.routers import auth, dev, health, inbox, invites, team, workspaces
 
 log = get_logger(__name__)
 
@@ -30,6 +30,7 @@ app.include_router(workspaces.router)
 app.include_router(team.router)
 app.include_router(invites.router)
 app.include_router(inbox.router)
+app.include_router(dev.router)
 
 
 @app.middleware("http")
