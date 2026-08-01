@@ -26,9 +26,7 @@ class Workspace(WorkspaceOwned, BaseTable):
 
 class WorkspaceMember(HasWorkspaceId, BaseTable):
     __tablename__ = "workspace_members"
-    __table_args__ = (
-        UniqueConstraint("user_id", "workspace_id", name="uq_member_user_workspace"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "workspace_id", name="uq_member_user_workspace"),)
 
     id: Mapped[Id]
     user_id: Mapped[int] = mapped_column(
