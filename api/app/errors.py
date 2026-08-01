@@ -16,7 +16,10 @@ _DEFAULTS: dict[int, tuple[str, str]] = {
     status.HTTP_403_FORBIDDEN: ("forbidden", "You don't have access to that."),
     status.HTTP_404_NOT_FOUND: ("not_found", "We couldn't find that."),
     status.HTTP_409_CONFLICT: ("conflict", "That conflicts with something that exists."),
-    status.HTTP_422_UNPROCESSABLE_CONTENT: ("invalid_request", "Some of those details aren't valid."),
+    status.HTTP_422_UNPROCESSABLE_CONTENT: (
+        "invalid_request",
+        "Some of those details aren't valid.",
+    ),
     status.HTTP_429_TOO_MANY_REQUESTS: ("rate_limited", "Too many requests. Wait a moment."),
 }
 

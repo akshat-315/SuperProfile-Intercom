@@ -16,7 +16,11 @@ class Health(BaseModel):
     version: str
 
 
-@router.get("/health", response_model=Health, summary="Report whether the process can serve traffic")
+@router.get(
+    "/health",
+    response_model=Health,
+    summary="Report whether the process can serve traffic",
+)
 async def health(session: SessionDep, response: Response) -> Health:
     db_ok = True
     try:
