@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
-import { SNOOZE_CHOICES, inbox, snoozeUntil } from "@/lib/inbox";
+import { SNOOZE_CHOICES, announceChange, inbox, snoozeUntil } from "@/lib/inbox";
 
 export function Composer({
   conversationId,
@@ -37,6 +37,7 @@ export function Composer({
     try {
       await inbox.reply(conversationId, { body: text, client_msg_id: clientId, resolve });
       if (resolve) toast.success("Marked resolved");
+      announceChange();
     } catch (problem) {
       toast.error(problem instanceof ApiError ? problem.message : "Could not send that.");
       setBody(text);
@@ -52,6 +53,7 @@ export function Composer({
       await inbox.snooze(conversationId, snoozeUntil(hours), text || undefined);
       setBody("");
       toast.success(`Snoozed until ${label.toLowerCase()}`);
+      announceChange();
     } catch (problem) {
       toast.error(problem instanceof ApiError ? problem.message : "Could not snooze it.");
     } finally {

@@ -58,3 +58,9 @@ export const SNOOZE_CHOICES = [
 export function snoozeUntil(hours: number): string {
   return new Date(Date.now() + hours * 3600_000).toISOString();
 }
+
+export const CHANGED = "inbox:changed";
+
+export function announceChange(): void {
+  window.dispatchEvent(new Event(CHANGED));
+}

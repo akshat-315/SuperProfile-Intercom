@@ -9,8 +9,7 @@ import { CustomerRail } from "@/components/inbox/customer-rail";
 import { MessageBubble } from "@/components/inbox/message-bubble";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Member, team as teamApi } from "@/lib/auth";
-import { type ConversationDetail, type Message } from "@/lib/inbox";
-import { inbox } from "@/lib/inbox";
+import { type ConversationDetail, type Message, announceChange, inbox } from "@/lib/inbox";
 
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -28,6 +27,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         const next = await inbox.thread(conversationId, signal);
         setDetail(next);
         setPending([]);
+        announceChange();
       } catch {
         if (!signal?.aborted) setGone(true);
       }

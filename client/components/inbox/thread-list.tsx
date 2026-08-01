@@ -9,7 +9,7 @@ import { InboxFilters } from "@/components/inbox/filters";
 import { ThreadRow } from "@/components/inbox/thread-row";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type ConversationRow, type Filters, inbox } from "@/lib/inbox";
+import { CHANGED, type ConversationRow, type Filters, inbox } from "@/lib/inbox";
 
 export function ThreadList() {
   const params = useParams<{ id?: string }>();
@@ -33,6 +33,20 @@ export function ThreadList() {
         if (!controller.signal.aborted) setRows([]);
       });
     return () => controller.abort();
+  }, [filters]);
+
+  useEffect(() => {
+    const refresh = () => {
+      inbox
+        .list(filters)
+        .then((page) => {
+          setRows(page.items);
+          setCursor(page.next_cursor);
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener(CHANGED, refresh);
+    return () => window.removeEventListener(CHANGED, refresh);
   }, [filters]);
 
   const loadMore = useCallback(async () => {

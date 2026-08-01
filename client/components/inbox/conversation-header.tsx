@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ApiError } from "@/lib/api";
 import type { Member } from "@/lib/auth";
-import { type ConversationRow, inbox } from "@/lib/inbox";
+import { type ConversationRow, announceChange, inbox } from "@/lib/inbox";
 
 export function ConversationHeader({
   row,
@@ -33,6 +33,7 @@ export function ConversationHeader({
       await action();
       toast.success(done);
       onChanged();
+      announceChange();
     } catch (problem) {
       toast.error(problem instanceof ApiError ? problem.message : "That did not work.");
     }
