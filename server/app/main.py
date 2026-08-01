@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, Response
 from app.config import settings
 from app.errors import register_error_handlers
 from app.logging import configure_logging, get_logger
-from app.routers import auth, health
+from app.routers import auth, health, workspaces
 
 log = get_logger(__name__)
 
@@ -26,6 +26,7 @@ app = FastAPI(title="Intercom API", version=settings.version, lifespan=lifespan)
 register_error_handlers(app)
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(workspaces.router)
 
 
 @app.middleware("http")

@@ -48,13 +48,11 @@ def password_problem(password: str) -> str | None:
     return None
 
 
-def sign_session(*, user_id: int, workspace_id: int, role: str, now: datetime) -> str:
-    payload = {
-        "uid": user_id,
-        "wid": workspace_id,
-        "role": role,
-        "exp": int((now + SESSION_TTL).timestamp()),
-    }
+def sign_session(*, user_id: int, workspace_id: int | None, role: str | None, now: datetime) -> str:
+    payload: dict = {"uid": user_id, "exp": int((now + SESSION_TTL).timestamp())}
+    if workspace_id is not None:
+        payload["wid"] = workspace_id
+        payload["role"] = role
     body = _b64encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode())
     return f"{body}.{_sign(body)}"
 
@@ -74,7 +72,10 @@ def read_session(token: str, *, now: datetime) -> dict | None:
     expires_at = payload.get("exp")
     if not isinstance(expires_at, int) or expires_at <= int(now.timestamp()):
         return None
-    if not isinstance(payload.get("uid"), int) or not isinstance(payload.get("wid"), int):
+    if not isinstance(payload.get("uid"), int):
+        return None
+    workspace_id = payload.get("wid")
+    if workspace_id is not None and not isinstance(workspace_id, int):
         return None
     return payload
 
