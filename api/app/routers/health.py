@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
 from app.db import SessionDep
@@ -22,7 +21,7 @@ async def health(session: SessionDep, response: Response) -> Health:
     db_ok = True
     try:
         await session.execute(text("SELECT 1"))
-    except SQLAlchemyError as exc:
+    except Exception as exc:
         db_ok = False
         log.error("health.db_unavailable", error=type(exc).__name__)
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
