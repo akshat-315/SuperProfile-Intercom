@@ -94,7 +94,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
         <Composer
           conversationId={conversationId}
-          onSent={(text, clientId) => {
+          onSent={(text, clientId) =>
             setPending((current) => [
               ...current,
               {
@@ -107,9 +107,12 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                 read_at: null,
                 created_at: new Date().toISOString(),
               },
-            ]);
-            setTimeout(() => load(), 400);
-          }}
+            ])
+          }
+          onSaved={() => load()}
+          onFailed={(clientId) =>
+            setPending((current) => current.filter((m) => m.client_msg_id !== clientId))
+          }
         />
       </div>
 

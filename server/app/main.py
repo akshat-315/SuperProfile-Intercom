@@ -3,12 +3,13 @@ import secrets
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
+from urllib.parse import urlsplit
 
 import structlog
 from fastapi import FastAPI, Request, Response
 
 from app.config import settings
-from app.errors import register_error_handlers
+from app.errors import envelope, register_error_handlers
 from app.logging import configure_logging, get_logger
 from app.routers import auth, dev, health, inbox, invites, team, workspaces
 from app.services import jobs, outbox  # noqa: F401  handlers register on import
@@ -41,6 +42,31 @@ app.include_router(team.router)
 app.include_router(invites.router)
 app.include_router(inbox.router)
 app.include_router(dev.router)
+
+
+CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+NO_COOKIE_PATHS = ("/api/widget/", "/hooks/")
+
+
+def own_origin() -> str:
+    parsed = urlsplit(settings.app_url)
+    return f"{parsed.scheme}://{parsed.netloc}".lower()
+
+
+@app.middleware("http")
+async def refuse_other_origins(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    origin = request.headers.get("origin")
+    changing = request.method in CHANGING_METHODS
+    carries_cookie = not request.url.path.startswith(NO_COOKIE_PATHS)
+
+    if changing and carries_cookie and origin is not None and origin.lower() != own_origin():
+        log.warning("request.foreign_origin", origin=origin, path=request.url.path)
+        return envelope("forbidden_origin", "That request came from somewhere else.", 403)
+
+    return await call_next(request)
 
 
 @app.middleware("http")
