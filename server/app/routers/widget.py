@@ -13,7 +13,8 @@ from app.schemas.widget import (
     ThreadOut,
     VisitorOut,
 )
-from app.services import events, ratelimit
+from app.schemas.ws import TicketOut
+from app.services import events, ratelimit, tickets
 from app.services import visitor as visitor_tokens
 from app.services import widget as service
 from app.services.security import utcnow
@@ -76,6 +77,16 @@ async def open_session(request: Request, body: SessionRequest, db: SessionDep) -
         greeting=workspace.widget_greeting,
         visitor=VisitorOut(id=customer.id, name=customer.name, email=customer.email),
     )
+
+
+@router.post("/ws/ticket", response_model=TicketOut)
+async def chat_ticket(visitor: Visitor) -> TicketOut:
+    claim = tickets.Claim(
+        kind=tickets.VISITOR,
+        workspace_id=visitor.workspace_id,
+        customer_id=visitor.customer.id,
+    )
+    return TicketOut(ticket=tickets.mint(claim), expires_in=tickets.TTL_SECONDS)
 
 
 @router.get("/conversations", response_model=ThreadList)

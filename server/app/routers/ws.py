@@ -1,12 +1,13 @@
 import asyncio
+from collections.abc import Callable
 from contextlib import suppress
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
 
 from app.config import settings
 from app.deps import InWorkspace
 from app.logging import get_logger
+from app.schemas.ws import TicketOut
 from app.services import events, tickets
 from app.services.connections import Connection, pump, registry
 
@@ -15,11 +16,6 @@ log = get_logger(__name__)
 router = APIRouter(tags=["realtime"])
 
 REFUSED = 1008
-
-
-class TicketOut(BaseModel):
-    ticket: str
-    expires_in: int
 
 
 @router.post("/api/ws/ticket", response_model=TicketOut)
@@ -32,6 +28,32 @@ async def agent_ticket(signed_in: InWorkspace) -> TicketOut:
         role=signed_in.role,
     )
     return TicketOut(ticket=tickets.mint(claim), expires_in=tickets.TTL_SECONDS)
+
+
+async def serve(
+    connection: Connection,
+    *,
+    join: Callable[[Connection], None],
+    leave: Callable[[Connection], None],
+    side: str,
+) -> None:
+    await connection.socket.accept()
+    join(connection)
+    writer = asyncio.create_task(pump(connection))
+    connection.offer({"t": events.RESYNC})
+    log.info("socket.opened", side=side, workspace_id=connection.workspace_id)
+
+    try:
+        while True:
+            await connection.socket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        leave(connection)
+        writer.cancel()
+        with suppress(asyncio.CancelledError):
+            await writer
+        log.info("socket.closed", side=side, workspace_id=connection.workspace_id)
 
 
 @router.websocket("/ws/agent")
@@ -47,26 +69,33 @@ async def agent_socket(socket: WebSocket, ticket: str = Query(default="")) -> No
         await socket.close(code=REFUSED)
         return
 
-    await socket.accept()
-    connection = Connection(
-        socket=socket,
-        workspace_id=claim.workspace_id,
-        user_id=claim.user_id,
-        role=claim.role,
+    await serve(
+        Connection(
+            socket=socket,
+            workspace_id=claim.workspace_id,
+            user_id=claim.user_id,
+            role=claim.role,
+        ),
+        join=registry.join_agents,
+        leave=registry.leave_agents,
+        side=tickets.AGENT,
     )
-    registry.join_agents(connection)
-    writer = asyncio.create_task(pump(connection))
-    log.info("socket.opened", side=tickets.AGENT, user_id=claim.user_id)
 
-    connection.offer({"t": events.RESYNC})
-    try:
-        while True:
-            await socket.receive_text()
-    except WebSocketDisconnect:
-        pass
-    finally:
-        registry.leave_agents(connection)
-        writer.cancel()
-        with suppress(asyncio.CancelledError):
-            await writer
-        log.info("socket.closed", side=tickets.AGENT, user_id=claim.user_id)
+
+@router.websocket("/ws/widget")
+async def widget_socket(socket: WebSocket, ticket: str = Query(default="")) -> None:
+    claim = tickets.redeem(ticket)
+    if claim is None or claim.kind != tickets.VISITOR or claim.customer_id is None:
+        await socket.close(code=REFUSED)
+        return
+
+    await serve(
+        Connection(
+            socket=socket,
+            workspace_id=claim.workspace_id,
+            customer_id=claim.customer_id,
+        ),
+        join=registry.join_visitors,
+        leave=registry.leave_visitors,
+        side=tickets.VISITOR,
+    )

@@ -14,10 +14,12 @@ import {
   SESSION_GONE,
   type Session,
   type Thread,
+  connectPanel,
   listThreads,
   markRead,
   newMessageId,
   openSession,
+  panelTicket,
   readThread,
   sendMessage,
   startThread,
@@ -43,6 +45,9 @@ function Panel() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
+  const [ready, setReady] = useState(false);
+  const viewRef = useRef<View>({ at: "loading" });
+  viewRef.current = view;
 
   const identify = useCallback(
     async (who?: { name: string; email: string }) => {
@@ -87,6 +92,7 @@ function Panel() {
         if (items.length > 0) setView({ at: "list" });
         else if (opened.visitor.email) setView({ at: "new" });
         else setView({ at: "identity" });
+        setReady(true);
       } catch (error) {
         if (cancelled) return;
         const why = error instanceof ApiError ? error.message : NO_KEY;
@@ -104,16 +110,36 @@ function Panel() {
     window.parent.postMessage({ type: "unread", count: unread }, "*");
   }, [threads]);
 
+  const reload = useCallback(
+    async (id: number) => {
+      const detail = await withSession((token) => readThread(token, id));
+      setMessages(detail.messages);
+      setTitle(detail.thread.title);
+      if (detail.thread.unread > 0) await withSession((token) => markRead(token, id));
+      await refreshList();
+    },
+    [withSession, refreshList],
+  );
+
+  useEffect(() => {
+    if (!ready) return;
+    return connectPanel(
+      () => withSession(panelTicket),
+      (event) => {
+        const current = viewRef.current;
+        if (event.t === "message" && current.at === "thread" && current.id === event.conversation) {
+          void reload(current.id);
+          return;
+        }
+        void refreshList();
+      },
+    );
+  }, [ready, withSession, refreshList, reload]);
+
   async function open(id: number) {
     setView({ at: "thread", id });
     setMessages([]);
-    const detail = await withSession((token) => readThread(token, id));
-    setMessages(detail.messages);
-    setTitle(detail.thread.title);
-    if (detail.thread.unread > 0) {
-      await withSession((token) => markRead(token, id));
-      await refreshList();
-    }
+    await reload(id);
   }
 
   function toList() {

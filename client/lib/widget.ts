@@ -1,4 +1,5 @@
 import { toError } from "@/lib/api";
+import { type LiveEvent, keepConnected } from "@/lib/live";
 
 export type ChatMessage = {
   id: number;
@@ -123,4 +124,15 @@ export function markRead(token: string, id: number): Promise<void> {
 
 export function newMessageId(): string {
   return crypto.randomUUID();
+}
+
+export function panelTicket(token: string): Promise<string> {
+  return call<{ ticket: string }>(token, "POST", "/ws/ticket").then((r) => r.ticket);
+}
+
+export function connectPanel(
+  getTicket: () => Promise<string>,
+  onEvent: (event: LiveEvent) => void,
+): () => void {
+  return keepConnected("/ws/widget", getTicket, onEvent);
 }
