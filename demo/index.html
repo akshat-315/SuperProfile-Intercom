@@ -379,7 +379,9 @@
       </div>
     </article>`).join("");
 
-  const APP_ORIGIN = new URLSearchParams(location.search).get("app") || "http://localhost:3000";
+  const PARAMS = new URLSearchParams(location.search);
+  const APP_ORIGIN = PARAMS.get("app") || "http://localhost:3000";
+  const DEFAULT_KEY = PARAMS.get("key") || "wk_7pAXE3s4nXAg85b34x74j7x9";
   const KEY_STORE = "superprofile.widget_key";
   const VISITOR_STORE = "intercom.visitor";
   const panel = document.getElementById("demo-controls");
@@ -437,8 +439,9 @@
     input.onkeydown = (e) => { if (e.key === "Enter") load(); };
   }
 
-  const saved = localStorage.getItem(KEY_STORE);
+  const saved = localStorage.getItem(KEY_STORE) || DEFAULT_KEY;
   if (saved) {
+    localStorage.setItem(KEY_STORE, saved);
     renderLoaded(saved);
     inject(saved);
   } else {

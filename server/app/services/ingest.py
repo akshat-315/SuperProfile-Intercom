@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.logging import get_logger
 from app.models import EMAIL, INBOUND, OPEN, Conversation, Message, Workspace
-from app.services import events, inbox, jobs, mail, widget
+from app.services import events, inbox, jobs, mail, summaries, widget
 from app.services.html import to_text
 from app.services.security import utcnow
 from app.workspace_filter import all_workspaces, use_workspace
@@ -22,7 +22,8 @@ AUTOMATED_PRECEDENCE = {"bulk", "list", "junk", "auto_reply"}
 
 QUOTE_MARKERS = (
     re.compile(r"^\s*>", re.MULTILINE),
-    re.compile(r"^\s*On .{5,120}\bwrote:\s*$", re.MULTILINE),
+    re.compile(r"^[ \t]*On\b[^\n]{0,120}(?:\n[^\n]{0,120}){0,2}?\bwrote:", re.MULTILINE),
+    re.compile(r"^[ \t]*Le\b[^\n]{0,120}(?:\n[^\n]{0,120}){0,2}?\ba écrit\s*:", re.MULTILINE),
     re.compile(r"^\s*-{2,}\s*Original Message\s*-{2,}\s*$", re.MULTILINE | re.IGNORECASE),
     re.compile(r"^\s*_{10,}\s*$", re.MULTILINE),
     re.compile(r"^\s*From:\s.+\bSent:\s", re.MULTILINE),
@@ -184,6 +185,7 @@ async def ingest(db: AsyncSession, job) -> None:
             log.info("ingest.delivered_twice", email_id=email_id, external_id=external_id)
             return
 
+        await summaries.schedule(db, conversation)
         await db.commit()
 
     events.message_saved(conversation, message)
