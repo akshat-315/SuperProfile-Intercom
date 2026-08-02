@@ -11,7 +11,7 @@ from app.schemas.articles import (
     CategoryRequest,
 )
 from app.services import articles as service
-from app.services.html import to_text
+from app.services.html import clean, plain, to_text
 from app.services.security import utcnow
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
@@ -72,12 +72,13 @@ async def create_article(body: ArticleRequest, signed_in: InWorkspace) -> Articl
     if body.category_id is not None:
         await service.category_by_id(signed_in.db, body.category_id)
 
+    safe = clean(body.body_html)
     article = await service.create(
         signed_in.db,
         signed_in.workspace.id,
-        title=body.title,
-        body_html=body.body_html,
-        body_text=to_text(body.body_html),
+        title=plain(body.title),
+        body_html=safe,
+        body_text=to_text(safe),
         category_id=body.category_id,
         author_user_id=signed_in.user.id,
     )
@@ -98,12 +99,13 @@ async def edit_article(
     if body.category_id is not None:
         await service.category_by_id(signed_in.db, body.category_id)
 
+    safe = clean(body.body_html)
     await service.update(
         signed_in.db,
         article,
-        title=body.title,
-        body_html=body.body_html,
-        body_text=to_text(body.body_html),
+        title=plain(body.title),
+        body_html=safe,
+        body_text=to_text(safe),
         category_id=body.category_id,
         now=utcnow(),
     )
