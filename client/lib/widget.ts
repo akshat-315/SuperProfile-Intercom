@@ -91,8 +91,9 @@ export function listThreads(token: string): Promise<{ items: Thread[] }> {
   return call<{ items: Thread[] }>(token, "GET", "/conversations");
 }
 
-export function readThread(token: string, id: number): Promise<ThreadDetail> {
-  return call<ThreadDetail>(token, "GET", `/conversations/${id}`);
+export function readThread(token: string, id: number, afterSeq = 0): Promise<ThreadDetail> {
+  const from = afterSeq > 0 ? `?after_seq=${afterSeq}` : "";
+  return call<ThreadDetail>(token, "GET", `/conversations/${id}${from}`);
 }
 
 export function startThread(
@@ -124,6 +125,23 @@ export function markRead(token: string, id: number): Promise<void> {
 
 export function newMessageId(): string {
   return crypto.randomUUID();
+}
+
+export function mergeBySeq(held: ChatMessage[], arriving: ChatMessage[]): ChatMessage[] {
+  if (arriving.length === 0) return held;
+  const bySeq = new Map(held.map((m) => [m.seq, m]));
+  for (const message of arriving) bySeq.set(message.seq, message);
+  return [...bySeq.values()].sort((a, b) => a.seq - b.seq);
+}
+
+export function highestSeq(messages: ChatMessage[]): number {
+  return messages.reduce((top, m) => (m.seq > top ? m.seq : top), 0);
+}
+
+export function stillPending(pending: ChatMessage[], canonical: ChatMessage[]): ChatMessage[] {
+  if (pending.length === 0) return pending;
+  const landed = new Set(canonical.map((m) => m.client_msg_id).filter(Boolean));
+  return pending.filter((m) => !landed.has(m.client_msg_id));
 }
 
 export function panelTicket(token: string): Promise<string> {
