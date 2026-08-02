@@ -76,6 +76,12 @@ server {
         access_log off;
     }
 
+    location /demo/ {
+        alias /srv/app/demo/;
+        index index.html;
+        try_files $uri $uri/ /demo/index.html;
+    }
+
     location / {
         proxy_pass http://intercom_web;
         proxy_set_header Upgrade    $http_upgrade;
