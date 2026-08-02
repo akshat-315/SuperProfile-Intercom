@@ -104,7 +104,7 @@ export function ArticleEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none min-h-72 px-4 py-3 focus:outline-none [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:font-medium [&_ul]:list-disc [&_ol]:list-decimal [&_ul,&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-3 [&_a]:underline",
+          "prose prose-sm min-h-72 max-w-[72ch] px-4 py-4 text-[14.5px] leading-7 text-ink-700 focus:outline-none [&_a]:text-brand-600 [&_a]:underline [&_blockquote]:rounded-r-md [&_blockquote]:border-l-[3px] [&_blockquote]:border-brand-500 [&_blockquote]:bg-brand-50 [&_blockquote]:py-2 [&_blockquote]:pl-4 [&_blockquote]:text-brand-900 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-[-0.018em] [&_h2]:text-ink-900 [&_h3]:font-medium [&_h3]:text-ink-900 [&_ol]:list-decimal [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-secondary [&_pre]:p-3 [&_strong]:text-ink-900 [&_ul,&_ol]:pl-5 [&_ul]:list-disc",
       },
     },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -114,11 +114,11 @@ export function ArticleEditor({
     if (editor && value !== editor.getHTML()) editor.commands.setContent(value);
   }, [editor, value]);
 
-  if (!editor) return <div className="min-h-72 rounded-md border" />;
+  if (!editor) return <div className="min-h-72 rounded-xl border bg-surface" />;
 
   return (
-    <div className="rounded-md border">
-      <div className="flex flex-wrap items-center gap-0.5 border-b p-1.5">
+    <div className="overflow-hidden rounded-xl border bg-surface">
+      <div className="flex flex-wrap items-center gap-0.5 border-b bg-rail p-1.5">
         {ACTIONS.map((action, index) =>
           action === "divider" ? (
             <Separator key={index} orientation="vertical" className="mx-1 h-5" />
@@ -130,7 +130,10 @@ export function ArticleEditor({
               size="icon"
               aria-label={action.label}
               aria-pressed={action.active(editor)}
-              className={cn("size-8", action.active(editor) && "bg-muted")}
+              className={cn(
+                "size-8 text-ink-700",
+                action.active(editor) && "bg-brand-50 text-brand-700",
+              )}
               onClick={() => action.run(editor)}
             >
               <action.icon className="size-4" aria-hidden />
@@ -143,7 +146,7 @@ export function ArticleEditor({
           variant="ghost"
           size="icon"
           aria-label="Link"
-          className={cn("size-8", editor.isActive("link") && "bg-muted")}
+          className={cn("size-8 text-ink-700", editor.isActive("link") && "bg-brand-50 text-brand-700")}
           onClick={() => {
             const href = window.prompt("Link to", editor.getAttributes("link").href ?? "https://");
             if (href === null) return;

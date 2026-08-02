@@ -50,7 +50,7 @@ export default function VerifyPage({ params }: { params: Promise<{ token: string
 
   if (state === "checking") {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         <CardHeader className="space-y-3">
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-full" />
@@ -61,12 +61,12 @@ export default function VerifyPage({ params }: { params: Promise<{ token: string
 
   if (state === "failed") {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         <CardHeader>
           <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10">
             <XCircle className="size-5 text-destructive" aria-hidden />
           </div>
-          <CardTitle>This link has expired</CardTitle>
+          <CardTitle className="text-xl font-semibold tracking-[-0.024em]">This link has expired</CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -82,12 +82,12 @@ export default function VerifyPage({ params }: { params: Promise<{ token: string
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
         <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-muted">
           <CheckCircle2 className="size-5" aria-hidden />
         </div>
-        <CardTitle>Email confirmed</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Email confirmed</CardTitle>
         <CardDescription>You can carry on setting up your workspace.</CardDescription>
       </CardHeader>
       <CardContent>

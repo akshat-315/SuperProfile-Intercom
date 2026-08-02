@@ -83,10 +83,10 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-5 sm:px-6 sm:py-8">
       <div>
         <h1 className="text-xl font-semibold">Team</h1>
-        <p className="text-sm text-muted-foreground">Who is in this workspace, and what they can do.</p>
+        <p className="text-sm text-ink-500">Who is in this workspace, and what they can do.</p>
       </div>
 
       {isAdmin && (
@@ -174,10 +174,10 @@ export default function TeamPage() {
                   <p className="truncate text-sm font-medium">
                     {member.name}
                     {member.user_id === me?.user.id && (
-                      <span className="ml-2 text-xs text-muted-foreground">you</span>
+                      <span className="ml-2 text-xs text-ink-500">you</span>
                     )}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+                  <p className="truncate text-xs text-ink-500">{member.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {!member.email_verified && <Badge variant="outline">unconfirmed</Badge>}

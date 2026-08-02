@@ -50,7 +50,7 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         <CardHeader className="space-y-3">
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-full" />
@@ -64,12 +64,12 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
 
   if (dead !== null || preview === null) {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         <CardHeader>
           <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10">
             <XCircle className="size-5 text-destructive" aria-hidden />
           </div>
-          <CardTitle>This invitation cannot be used</CardTitle>
+          <CardTitle className="text-xl font-semibold tracking-[-0.024em]">This invitation cannot be used</CardTitle>
           <CardDescription>{dead ?? "Ask whoever invited you for a new one."}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,7 +84,7 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
   const stage = stageOf(me);
   const header = (
     <CardHeader>
-      <CardTitle>Join {preview.workspace_name}</CardTitle>
+      <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Join {preview.workspace_name}</CardTitle>
       <CardDescription>
         {preview.inviter_name} invited {preview.email} as{" "}
         <Badge variant="secondary">{preview.role}</Badge>
@@ -94,7 +94,7 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
 
   if (stage === "signed-out") {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         {header}
         <CardContent className="space-y-3">
           <Button className="w-full" asChild>
@@ -112,10 +112,10 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
 
   if (stage === "unverified") {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         {header}
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ink-500">
             Confirm your email address first, then come back to this link.
           </p>
           <Button className="w-full" asChild>
@@ -127,7 +127,7 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       {header}
       <CardContent className="space-y-3">
         <FormError message={error} />

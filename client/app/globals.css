@@ -39,6 +39,39 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* ---- Harbour: brand violet ---------------------------------------- */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+
+  /* ---- Harbour: violet-tinted ink ----------------------------------- */
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+
+  /* ---- Harbour: surfaces -------------------------------------------- */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-rail: var(--rail);
+  --color-line: var(--line);
+  --color-line-input: var(--line-input);
+
+  /* ---- Harbour: four semantic hues, total ---------------------------- */
+  --color-wait: var(--wait-ink);
+  --color-wait-bg: var(--wait-bg);
+  --color-wait-dot: var(--wait-dot);
+  --color-done: var(--done-ink);
+  --color-done-bg: var(--done-bg);
+  --color-stop: var(--stop-ink);
+  --color-stop-bg: var(--stop-bg);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,75 +79,151 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-e1: var(--e1);
+  --shadow-e2: var(--e2);
+  --shadow-e3: var(--e3);
+
+  --ease-harbour: var(--ease);
+
+  --animate-sweep: sweep 1400ms linear infinite;
+  --animate-bob: bob 1200ms infinite var(--ease);
 }
 
+/* ======================================================================
+   HARBOUR — design tokens.
+   Ratios in the comments are measured against the surface each colour is
+   actually used on. Nothing here is decorative.
+   ====================================================================== */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Brand violet, derived from the SuperProfile marketing violet #6d3ee0
+     (demo/index.html) so the desk and the product it supports are visibly
+     the same company. Violet is rationed to roughly 2% of lit pixels. */
+  --brand-50: #f4f0fe; /* selected row wash, agent bubble fill, summary panel */
+  --brand-100: #e7dffc; /* border on a violet wash, quiet chips, meter track */
+  --brand-200: #cfbef9; /* disabled primary, meter fill on the low band */
+  --brand-300: #a78bf2; /* empty-state line art only. Never text, never a border */
+  --brand-500: #6d3ee0; /* THE brand. Primary fill, active indicator, focus ring */
+  --brand-600: #5b2fc9; /* primary hover / pressed, links in body copy */
+  --brand-700: #46229b; /* text on a violet wash — 9.6:1 on brand-50 */
+  --brand-900: #2a1263; /* headline over a violet field */
+
+  /* Ink. Violet-tinted neutrals, not pure grey — that tint is the
+     difference between a product and a default theme. */
+  --ink-900: #17141f; /* primary text — 18.2:1 on white */
+  --ink-700: #3a3548; /* panel headings, secondary buttons — 11.8:1 */
+  --ink-500: #6a6577; /* preview text, timestamps, all meta — 5.6:1 */
+  --ink-400: #8e8a9b; /* input placeholder only. Never body copy — 3.4:1 */
+
+  /* Lines and surfaces. Two border tokens, because WCAG 1.4.11 needs 3:1
+     wherever the boundary *is* the affordance. */
+  --line: #e8e4ef; /* structural hairlines between rows, under headers */
+  --line-input: #8b8598; /* form-control borders — 3.6:1 */
+  --paper: #fbfaff; /* app canvas */
+  --surface: #ffffff; /* rows, cards, bubbles */
+  --rail: #f7f5fb; /* nav rail and right rail */
+
+  /* Four semantic hues in the whole agent UI. That is the point.
+     Snoozed deliberately has no hue: "not now" should recede. */
+  --wait-ink: #9a4a08; /* waiting on us — 5.6:1 on wait-bg */
+  --wait-bg: #fef3c7;
+  --wait-dot: #f59e0b;
+  --done-ink: #0c6b45; /* resolved — 5.8:1 on done-bg */
+  --done-bg: #e6f5ee;
+  --stop-ink: #ae2020; /* something broke — 6.1:1 on stop-bg */
+  --stop-bg: #fdecec;
+
+  /* Elevation. Three levels. Shadows never carry colour — a tinted shadow
+     is the fastest way to make software look cheap. */
+  --e1: 0 1px 2px rgb(23 20 31 / 0.06);
+  --e2: 0 4px 12px -2px rgb(23 20 31 / 0.1);
+  --e3: 0 12px 32px -8px rgb(23 20 31 / 0.18);
+
+  /* Motion */
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --t-pane: 220ms;
+  --t-push: 260ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- shadcn surface mapping. Every component is already wired to
+     these, which is why replacing this block moves most of the product. */
+  --background: var(--paper);
+  --foreground: var(--ink-900);
+  --card: var(--surface);
+  --card-foreground: var(--ink-900);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--brand-500);
+  --primary-foreground: #ffffff;
+  --secondary: #f1eff4;
+  --secondary-foreground: var(--ink-700);
+  --muted: #f4f2f8;
+  --muted-foreground: var(--ink-500);
+  --accent: var(--brand-50);
+  --accent-foreground: var(--brand-700);
+  --destructive: var(--stop-ink);
+  --border: var(--line);
+  --input: var(--line-input);
+  --ring: var(--brand-500);
+  --chart-1: var(--brand-500);
+  --chart-2: var(--brand-300);
+  --chart-3: var(--wait-dot);
+  --chart-4: var(--done-ink);
+  --chart-5: var(--ink-500);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: var(--rail);
+  --sidebar-foreground: var(--ink-900);
+  --sidebar-primary: var(--brand-500);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-700);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand-500);
 }
 
+/* Dark mode is out of scope for v1 and deliberately so: a half-done dark
+   mode is worse than none, and the greyscale-instrument thesis needs to be
+   proven in light first. The structure supports it — every value already
+   goes through a variable — so this block exists only to keep the hues
+   consistent should it ever be switched on. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --paper: #100e16;
+  --surface: #17141f;
+  --rail: #14111c;
+  --line: #2a2536;
+  --line-input: #6c6680;
+  --ink-900: #f4f2f8;
+  --ink-700: #cbc6d6;
+  --ink-500: #9c96ab;
+  --ink-400: #7d7790;
+
+  --background: var(--paper);
+  --foreground: var(--ink-900);
+  --card: var(--surface);
+  --card-foreground: var(--ink-900);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink-900);
+  --primary: #8b62ea;
+  --primary-foreground: #17141f;
+  --secondary: #241f30;
+  --secondary-foreground: var(--ink-700);
+  --muted: #201b2b;
+  --muted-foreground: var(--ink-500);
+  --accent: #2b2140;
+  --accent-foreground: #cfbef9;
+  --destructive: #f08a8a;
+  --border: var(--line);
+  --input: var(--line-input);
+  --ring: #8b62ea;
+  --sidebar: var(--rail);
+  --sidebar-foreground: var(--ink-900);
+  --sidebar-primary: #8b62ea;
+  --sidebar-primary-foreground: #17141f;
+  --sidebar-accent: #2b2140;
+  --sidebar-accent-foreground: #cfbef9;
+  --sidebar-border: var(--line);
+  --sidebar-ring: #8b62ea;
 }
 
 @layer base {
@@ -126,5 +235,76 @@
   }
   html {
     @apply font-sans;
+    letter-spacing: -0.011em;
+  }
+
+  /* Negative tracking scales with size; it is what stops the workhorse
+     13px from reading as a spreadsheet. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.022em;
+  }
+
+  /* One ring, everywhere. shadcn primitives carry their own violet ring;
+     this covers everything hand-built — rows, chips, tabs, nav items — so
+     `outline: none` is never written without a replacement. */
+  :where(a, button, input, textarea, select, summary, [tabindex]):not(
+      [data-slot]
+    ):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: max(4px, var(--radius-sm));
+  }
+
+  /* Tabular numerals so a column of live-updating times does not shimmer. */
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Skeletons sweep only on first paint. Refetches keep the stale rows and
+   swap in place, so they never shimmer. */
+@keyframes sweep {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Typing dots: slow enough to read as breathing, not as a spinner. */
+@keyframes bob {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@utility skeleton-sweep {
+  background-image: linear-gradient(90deg, #efedf4 0%, #f7f5fb 50%, #efedf4 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-sweep);
+}
+
+/* Handled once, globally. Nothing that conveys state is removed — only the
+   movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

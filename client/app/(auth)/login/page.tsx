@@ -34,9 +34,9 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Sign in</CardTitle>
         <CardDescription>Welcome back.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,13 +64,13 @@ export default function LoginPage() {
             />
           </div>
           <FormError message={error} />
-          <SubmitButton busy={busy} type="submit" className="w-full">
+          <SubmitButton busy={busy} type="submit" className="h-11 w-full rounded-[10px] text-sm font-semibold">
             Sign in
           </SubmitButton>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-ink-500">
           No account?{" "}
-          <Link href={ROUTES.signup} className="font-medium text-foreground underline">
+          <Link href={ROUTES.signup} className="font-medium text-brand-600 underline underline-offset-2">
             Create one
           </Link>
         </p>

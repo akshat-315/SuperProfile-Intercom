@@ -44,9 +44,9 @@ function SignupForm() {
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Create your account</CardTitle>
         <CardDescription>You will pick a workspace next.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -83,11 +83,11 @@ function SignupForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">At least {MIN_PASSWORD} characters.</p>
+            <p className="text-xs text-ink-500">At least {MIN_PASSWORD} characters.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="invite">
-              Invite code <span className="text-muted-foreground">(optional)</span>
+              Invite code <span className="text-ink-500">(optional)</span>
             </Label>
             <Input
               id="invite"
@@ -98,13 +98,13 @@ function SignupForm() {
             />
           </div>
           <FormError message={error} />
-          <SubmitButton busy={busy} type="submit" className="w-full">
+          <SubmitButton busy={busy} type="submit" className="h-11 w-full rounded-[10px] text-sm font-semibold">
             Create account
           </SubmitButton>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-ink-500">
           Already have one?{" "}
-          <Link href={ROUTES.login} className="font-medium text-foreground underline">
+          <Link href={ROUTES.login} className="font-medium text-brand-600 underline underline-offset-2">
             Sign in
           </Link>
         </p>

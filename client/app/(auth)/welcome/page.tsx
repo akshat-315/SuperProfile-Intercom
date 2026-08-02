@@ -52,7 +52,7 @@ export default function WelcomePage() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
         <CardHeader className="space-y-3">
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-full" />
@@ -96,12 +96,12 @@ function AwaitingVerification({ email }: { email: string }) {
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
         <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-muted">
           <MailCheck className="size-5" aria-hidden />
         </div>
-        <CardTitle>Confirm your email</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Confirm your email</CardTitle>
         <CardDescription>
           We sent a link to <span className="font-medium text-foreground">{email}</span>. Open it and
           this page will move on by itself.
@@ -111,7 +111,7 @@ function AwaitingVerification({ email }: { email: string }) {
         <SubmitButton busy={busy} variant="outline" className="w-full" onClick={resend}>
           Send it again
         </SubmitButton>
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-xs text-ink-500">
           Nothing yet? Check your spam folder.
         </p>
       </CardContent>
@@ -140,9 +140,9 @@ function ChooseWorkspace({ onDone }: { onDone: () => Promise<Me | null> }) {
   }
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
-        <CardTitle>Set up your workspace</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Set up your workspace</CardTitle>
         <CardDescription>Start a new one, or join a team that invited you.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -163,14 +163,14 @@ function ChooseWorkspace({ onDone }: { onDone: () => Promise<Me | null> }) {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <SubmitButton busy={busy === "create"} type="submit" className="w-full">
+          <SubmitButton busy={busy === "create"} type="submit" className="h-11 w-full rounded-[10px] text-sm font-semibold">
             Create workspace
           </SubmitButton>
         </form>
 
         <div className="relative">
           <Separator />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs uppercase tracking-wide text-muted-foreground">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs uppercase tracking-wide text-ink-500">
             or
           </span>
         </div>
@@ -202,7 +202,7 @@ function ChooseWorkspace({ onDone }: { onDone: () => Promise<Me | null> }) {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="w-full text-ink-500"
           onClick={async () => {
             await auth.logout();
             router.replace(ROUTES.login);

@@ -54,10 +54,10 @@ export default function WorkspaceSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-8">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-8">
       <div>
         <h1 className="text-xl font-semibold">Workspace</h1>
-        <p className="text-sm text-muted-foreground">Its name, and how to leave it.</p>
+        <p className="text-sm text-ink-500">Its name, and how to leave it.</p>
       </div>
 
       <Card>
