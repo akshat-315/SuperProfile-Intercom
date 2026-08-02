@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
@@ -70,29 +71,60 @@ async def identify(
 
         customer = by_email or by_browser
         if customer is None:
-            customer = Customer(
-                workspace_id=workspace.id,
-                name=name,
-                email=email,
-                visitor_id=known_visitor_id or new_visitor_id(),
+            customer = await _claim(
+                db, workspace, name=name, email=email, visitor_id=known_visitor_id
             )
-            db.add(customer)
-            await db.flush()
-        else:
-            if by_email is not None and by_browser is not None and by_browser.id != by_email.id:
-                await _merge(db, keep=by_email, drop=by_browser)
-            if name:
-                customer.name = name
-            if email:
-                customer.email = email
-            if known_visitor_id:
-                customer.visitor_id = known_visitor_id
-            elif customer.visitor_id is None:
-                customer.visitor_id = new_visitor_id()
-            await db.flush()
+        elif by_email is not None and by_browser is not None and by_browser.id != by_email.id:
+            await _merge(db, keep=by_email, drop=by_browser)
+
+        if name:
+            customer.name = name
+        if email:
+            customer.email = email
+        if known_visitor_id:
+            customer.visitor_id = known_visitor_id
+        elif customer.visitor_id is None:
+            customer.visitor_id = new_visitor_id()
+        await db.flush()
 
     assert customer.visitor_id is not None
     return Identified(customer=customer, workspace=workspace, visitor_id=customer.visitor_id)
+
+
+async def _claim(
+    db: AsyncSession,
+    workspace: Workspace,
+    *,
+    name: str | None,
+    email: str | None,
+    visitor_id: str | None,
+) -> Customer:
+    candidate = Customer(
+        workspace_id=workspace.id,
+        name=name,
+        email=email,
+        visitor_id=visitor_id or new_visitor_id(),
+    )
+    try:
+        async with db.begin_nested():
+            db.add(candidate)
+        return candidate
+    except IntegrityError:
+        taken = await _already_there(db, email=email, visitor_id=candidate.visitor_id)
+        if taken is None:
+            raise
+        log.info("widget.identify_race", workspace_id=workspace.id, customer_id=taken.id)
+        return taken
+
+
+async def _already_there(
+    db: AsyncSession, *, email: str | None, visitor_id: str
+) -> Customer | None:
+    if email:
+        found = await db.scalar(select(Customer).where(Customer.email == email))
+        if found is not None:
+            return found
+    return await db.scalar(select(Customer).where(Customer.visitor_id == visitor_id))
 
 
 async def _merge(db: AsyncSession, *, keep: Customer, drop: Customer) -> None:
