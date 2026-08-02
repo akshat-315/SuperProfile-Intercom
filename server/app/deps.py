@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionDep
 from app.errors import AppError
-from app.models import ADMIN, User, Workspace, touch_last_seen
+from app.models import ADMIN, Customer, User, Workspace, touch_last_seen
+from app.services import visitor as visitor_tokens
 from app.services import workspaces
 from app.services.security import SESSION_COOKIE, read_session, utcnow
 from app.workspace_filter import all_workspaces, use_workspace
@@ -17,6 +18,14 @@ NOT_SIGNED_IN = "You need to sign in to do that."
 NO_WORKSPACE = "Create or join a workspace first."
 NOT_ADMIN = "Only an admin can do that."
 NOT_VERIFIED = "Confirm your email address first."
+CHAT_SESSION_GONE = "This chat session has expired. Reload the page to start again."
+
+
+def client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 @dataclass(frozen=True)

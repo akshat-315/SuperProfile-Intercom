@@ -7,6 +7,10 @@ from app.logging import get_logger
 
 log = get_logger(__name__)
 
+TOO_MANY = "Too many attempts. Wait a minute and try again."
+MAX_TRACKED = 4096
+IDLE_SECONDS = 3600
+
 
 @dataclass(frozen=True)
 class Limit:
@@ -14,52 +18,54 @@ class Limit:
     window_seconds: int
     name: str
 
+    @property
+    def refill_per_second(self) -> float:
+        return self.allowed / self.window_seconds
+
 
 LOGIN = Limit(allowed=5, window_seconds=60, name="login")
 SIGNUP = Limit(allowed=3, window_seconds=60, name="signup")
 VERIFY_RESEND = Limit(allowed=3, window_seconds=3600, name="verify_resend")
+WIDGET_SESSION = Limit(allowed=20, window_seconds=60, name="widget_session")
+WIDGET_START = Limit(allowed=5, window_seconds=300, name="widget_start")
+WIDGET_SEND = Limit(allowed=30, window_seconds=60, name="widget_send")
 
 
-class _Counter:
+class _Buckets:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._windows: dict[str, tuple[float, int]] = {}
+        self._buckets: dict[str, tuple[float, float]] = {}
 
-    def hit(self, key: str, limit: Limit, now: float) -> bool:
+    def take(self, key: str, limit: Limit, now: float) -> bool:
         with self._lock:
-            self._forget_expired(now)
-            started_at, count = self._windows.get(key, (now, 0))
-            if now - started_at >= limit.window_seconds:
-                started_at, count = now, 0
-            count += 1
-            self._windows[key] = (started_at, count)
-            return count <= limit.allowed
+            self._forget_idle(now)
+            tokens, seen = self._buckets.get(key, (float(limit.allowed), now))
+            tokens = min(float(limit.allowed), tokens + (now - seen) * limit.refill_per_second)
+            if tokens < 1.0:
+                self._buckets[key] = (tokens, now)
+                return False
+            self._buckets[key] = (tokens - 1.0, now)
+            return True
 
-    def _forget_expired(self, now: float) -> None:
-        if len(self._windows) < 1024:
+    def _forget_idle(self, now: float) -> None:
+        if len(self._buckets) < MAX_TRACKED:
             return
-        self._windows = {
-            key: window for key, window in self._windows.items() if now - window[0] < 3600
+        self._buckets = {
+            key: bucket
+            for key, bucket in self._buckets.items()
+            if now - bucket[1] < IDLE_SECONDS
         }
 
-    def reset(self) -> None:
-        with self._lock:
-            self._windows.clear()
+
+_buckets = _Buckets()
 
 
-_counter = _Counter()
+def allow(limit: Limit, key: str) -> bool:
+    return _buckets.take(f"{limit.name}:{key}", limit, time.monotonic())
 
 
 def enforce(limit: Limit, key: str) -> None:
-    if _counter.hit(f"{limit.name}:{key}", limit, time.monotonic()):
+    if allow(limit, key):
         return
     log.warning("ratelimit.hit", limit=limit.name, key=key)
-    raise AppError(
-        "rate_limited",
-        "Too many attempts. Wait a minute and try again.",
-        status_code=429,
-    )
-
-
-def reset() -> None:
-    _counter.reset()
+    raise AppError("rate_limited", TOO_MANY, status_code=429)
