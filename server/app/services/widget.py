@@ -147,7 +147,7 @@ async def conversations_for(db: AsyncSession, customer: Customer) -> list[Thread
     rows = list(
         await db.scalars(
             select(Conversation)
-            .where(Conversation.customer_id == customer.id)
+            .where(Conversation.customer_id == customer.id, Conversation.channel == CHAT)
             .order_by(Conversation.last_message_at.desc())
         )
     )
@@ -229,7 +229,9 @@ async def conversation_of(
 ) -> Conversation:
     conversation = await db.scalar(
         select(Conversation).where(
-            Conversation.id == conversation_id, Conversation.customer_id == customer.id
+            Conversation.id == conversation_id,
+            Conversation.customer_id == customer.id,
+            Conversation.channel == CHAT,
         )
     )
     if conversation is None:

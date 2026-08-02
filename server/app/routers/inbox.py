@@ -26,6 +26,7 @@ from app.services.security import utcnow
 router = APIRouter(prefix="/api/conversations", tags=["inbox"])
 
 STATES = ("active", "snoozed", "resolved")
+RESOLVED_FIRST = "This conversation is resolved. Reopen it before replying."
 
 
 def person(user: User | None) -> AssigneeOut | None:
@@ -62,6 +63,11 @@ def message_out(message: Message, authors: dict[int, User]) -> MessageOut:
         read_at=message.read_at,
         created_at=message.created_at,
     )
+
+
+def _claim_if_unassigned(conversation: Conversation, user: User) -> None:
+    if conversation.assignee_user_id is None:
+        conversation.assignee_user_id = user.id
 
 
 async def _mine(signed_in: InWorkspace, conversation_id: int) -> Conversation:
@@ -158,6 +164,8 @@ async def suggestions(conversation_id: int, signed_in: InWorkspace) -> Suggestio
 )
 async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace) -> MessageOut:
     conversation = await _mine(signed_in, conversation_id)
+    if conversation.status == RESOLVED:
+        raise AppError("conversation_resolved", RESOLVED_FIRST, status_code=409)
     now = utcnow()
 
     message = await service.reply(
@@ -168,6 +176,8 @@ async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace
         client_msg_id=body.client_msg_id,
         now=now,
     )
+
+    _claim_if_unassigned(conversation, signed_in.user)
 
     if conversation.channel == EMAIL and message.external_id is None:
         message.external_id = outbox.new_message_id()
@@ -205,6 +215,8 @@ async def set_status(conversation_id: int, body: StatusRequest, signed_in: InWor
 @router.patch("/{conversation_id}/snooze", status_code=status.HTTP_204_NO_CONTENT)
 async def snooze(conversation_id: int, body: SnoozeRequest, signed_in: InWorkspace) -> None:
     conversation = await _mine(signed_in, conversation_id)
+    if conversation.status == RESOLVED:
+        raise AppError("conversation_resolved", RESOLVED_FIRST, status_code=409)
     now = utcnow()
 
     if body.body:
@@ -216,6 +228,7 @@ async def snooze(conversation_id: int, body: SnoozeRequest, signed_in: InWorkspa
             client_msg_id=None,
             now=now,
         )
+        _claim_if_unassigned(conversation, signed_in.user)
 
     await service.snooze(signed_in.db, conversation, _aware(body.until))
     await signed_in.db.commit()
