@@ -20,6 +20,7 @@ class Workspace(WorkspaceOwned, BaseTable):
     slug: Mapped[str] = mapped_column(String(140), unique=True, nullable=False)
     widget_key: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     widget_greeting: Mapped[str | None] = mapped_column(String(200))
+    inbound_token: Mapped[str] = mapped_column(String(140), unique=True, nullable=False)
 
     @classmethod
     def workspace_filter(cls, workspace_id: int) -> ColumnElement[bool]:

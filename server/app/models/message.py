@@ -18,6 +18,7 @@ class Message(HasWorkspaceId, BaseTable):
     __table_args__ = (
         UniqueConstraint("conversation_id", "seq", name="uq_message_seq"),
         UniqueConstraint("conversation_id", "client_msg_id", name="uq_message_client_id"),
+        UniqueConstraint("workspace_id", "external_id", name="uq_message_external_id"),
     )
 
     id: Mapped[Id]
