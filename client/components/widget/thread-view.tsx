@@ -7,15 +7,15 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { MockMessage } from "@/lib/widget-mock";
+import type { ChatMessage } from "@/lib/widget";
 
 export function ThreadView({
   messages,
   greeting,
   onSend,
 }: {
-  messages: MockMessage[];
-  greeting?: string;
+  messages: ChatMessage[];
+  greeting?: string | null;
   onSend: (body: string) => void;
 }) {
   const [body, setBody] = useState("");
@@ -69,8 +69,8 @@ export function ThreadView({
   );
 }
 
-function Bubble({ message }: { message: MockMessage }) {
-  const mine = message.from === "customer";
+function Bubble({ message }: { message: ChatMessage }) {
+  const mine = message.sender === "customer";
   const at = new Date(message.at);
 
   return (

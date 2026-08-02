@@ -4,11 +4,9 @@ import { ChevronRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { whenLabel } from "@/lib/inbox";
-import type { MockThread } from "@/lib/widget-mock";
+import type { Thread } from "@/lib/widget";
 
-export function ThreadSummary({ thread, onOpen }: { thread: MockThread; onOpen: () => void }) {
-  const last = thread.messages[thread.messages.length - 1];
-
+export function ThreadSummary({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
   return (
     <button
       type="button"
@@ -17,15 +15,12 @@ export function ThreadSummary({ thread, onOpen }: { thread: MockThread; onOpen: 
     >
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium">{thread.subject}</span>
+          <span className="truncate text-sm font-medium">{thread.title}</span>
           {thread.unread > 0 && (
             <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="unread" />
           )}
         </div>
-        <p className="truncate text-xs text-muted-foreground">
-          {last.from === "agent" ? `${last.author}: ` : "You: "}
-          {last.body}
-        </p>
+        <p className="truncate text-xs text-muted-foreground">{thread.preview}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {thread.status === "resolved" && (

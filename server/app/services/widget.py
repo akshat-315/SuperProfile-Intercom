@@ -27,6 +27,8 @@ log = get_logger(__name__)
 UNKNOWN_KEY = "That widget key is not recognised."
 TOO_MANY_OPEN = "You already have three conversations open. Continue one of those."
 MAX_OPEN = 3
+FIRST_SEQ = 1
+TITLE_LENGTH = 60
 
 
 @dataclass(frozen=True)
@@ -102,9 +104,14 @@ async def _merge(db: AsyncSession, *, keep: Customer, drop: Customer) -> None:
     log.info("widget.customer_merged", kept=keep.id, dropped=drop.id)
 
 
-async def conversations_for(
-    db: AsyncSession, customer: Customer
-) -> list[tuple[Conversation, str, int]]:
+@dataclass(frozen=True)
+class ThreadRow:
+    conversation: Conversation
+    opening: str
+    unread: int
+
+
+async def conversations_for(db: AsyncSession, customer: Customer) -> list[ThreadRow]:
     rows = list(
         await db.scalars(
             select(Conversation)
@@ -116,12 +123,12 @@ async def conversations_for(
         return []
 
     ids = [row.id for row in rows]
-    previews = dict(
+    openings = dict(
         (
             await db.execute(
-                select(Message.conversation_id, func.min(Message.body_text))
-                .where(Message.conversation_id.in_(ids))
-                .group_by(Message.conversation_id)
+                select(Message.conversation_id, Message.body_text).where(
+                    Message.conversation_id.in_(ids), Message.seq == FIRST_SEQ
+                )
             )
         ).all()
     )
@@ -138,7 +145,23 @@ async def conversations_for(
             )
         ).all()
     )
-    return [(row, previews.get(row.id, ""), unread.get(row.id, 0)) for row in rows]
+    return [
+        ThreadRow(
+            conversation=row,
+            opening=openings.get(row.id, ""),
+            unread=unread.get(row.id, 0),
+        )
+        for row in rows
+    ]
+
+
+async def opening_of(db: AsyncSession, conversation: Conversation) -> str:
+    body = await db.scalar(
+        select(Message.body_text).where(
+            Message.conversation_id == conversation.id, Message.seq == FIRST_SEQ
+        )
+    )
+    return body or ""
 
 
 async def open_count(db: AsyncSession, customer: Customer) -> int:

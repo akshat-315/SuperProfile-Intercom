@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class SessionRequest(BaseModel):
@@ -29,6 +29,7 @@ class SessionOut(BaseModel):
 class ThreadOut(BaseModel):
     id: int
     status: str
+    title: str
     preview: str
     unread: int
     last_at: datetime
@@ -56,3 +57,11 @@ class ThreadDetail(BaseModel):
 class SendRequest(BaseModel):
     body: str = Field(min_length=1, max_length=10000)
     client_msg_id: UUID | None = None
+
+    @field_validator("body")
+    @classmethod
+    def _reject_blank(cls, value: str) -> str:
+        text = value.strip()
+        if not text:
+            raise ValueError("a message needs some text")
+        return text

@@ -51,9 +51,7 @@ class _Buckets:
         if len(self._buckets) < MAX_TRACKED:
             return
         self._buckets = {
-            key: bucket
-            for key, bucket in self._buckets.items()
-            if now - bucket[1] < IDLE_SECONDS
+            key: bucket for key, bucket in self._buckets.items() if now - bucket[1] < IDLE_SECONDS
         }
 
 
