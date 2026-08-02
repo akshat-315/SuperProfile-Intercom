@@ -16,14 +16,17 @@ import {
   type Session,
   type Thread,
   connectPanel,
+  highestSeq,
   listThreads,
   markRead,
+  mergeBySeq,
   newMessageId,
   openSession,
   panelTicket,
   readThread,
   sendMessage,
   startThread,
+  stillPending,
 } from "@/lib/widget";
 
 type View =
@@ -45,13 +48,16 @@ function Panel() {
   const [title, setTitle] = useState("Chat");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pending, setPending] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [ready, setReady] = useState(false);
   const [agentTyping, setAgentTyping] = useState(false);
   const [seen, setSeen] = useState(false);
   const viewRef = useRef<View>({ at: "loading" });
   const liveRef = useRef<Live | null>(null);
+  const seqRef = useRef(0);
   viewRef.current = view;
+  seqRef.current = highestSeq(messages);
 
   const identify = useCallback(
     async (who?: { name: string; email: string }) => {
@@ -132,9 +138,13 @@ function Panel() {
   }, [view]);
 
   const reload = useCallback(
-    async (id: number) => {
-      const detail = await withSession((token) => readThread(token, id));
-      setMessages(detail.messages);
+    async (id: number, afterSeq = 0) => {
+      const detail = await withSession((token) => readThread(token, id, afterSeq));
+      setMessages((held) => {
+        const merged = mergeBySeq(held, detail.messages);
+        setPending((waiting) => stillPending(waiting, merged));
+        return merged;
+      });
       setTitle(detail.thread.title);
       if (detail.thread.unread > 0) await withSession((token) => markRead(token, id));
       await refreshList();
@@ -165,7 +175,7 @@ function Panel() {
           return;
         }
         if (mine) {
-          void reload(current.id);
+          if (event.seq > seqRef.current) void reload(current.id, seqRef.current);
           return;
         }
         void refreshList();
@@ -181,6 +191,7 @@ function Panel() {
   async function open(id: number) {
     setView({ at: "thread", id });
     setMessages([]);
+    setPending([]);
     await reload(id);
   }
 
@@ -193,24 +204,39 @@ function Panel() {
   async function send(body: string) {
     if (sending) return;
     setSending(true);
+
     const clientMsgId = newMessageId();
+    const optimistic: ChatMessage = {
+      id: -Date.now(),
+      seq: 0,
+      sender: "customer",
+      author: null,
+      body,
+      at: new Date().toISOString(),
+      client_msg_id: clientMsgId,
+    };
+    setPending((waiting) => [...waiting, optimistic]);
 
     try {
       if (view.at === "new") {
         const detail = await withSession((token) => startThread(token, body, clientMsgId));
-        setMessages(detail.messages);
+        setMessages(mergeBySeq([], detail.messages));
+        setPending((waiting) => stillPending(waiting, detail.messages));
         setTitle(detail.thread.title);
         setView({ at: "thread", id: detail.thread.id });
       } else if (view.at === "thread") {
-        const message = await withSession((token) =>
+        const saved = await withSession((token) =>
           sendMessage(token, view.id, body, clientMsgId),
         );
-        setMessages((current) =>
-          current.some((m) => m.id === message.id) ? current : [...current, message],
-        );
+        setMessages((held) => {
+          const merged = mergeBySeq(held, [saved]);
+          setPending((waiting) => stillPending(waiting, merged));
+          return merged;
+        });
       }
       await refreshList();
     } catch (error) {
+      setPending((waiting) => waiting.filter((m) => m.client_msg_id !== clientMsgId));
       const why = error instanceof ApiError ? error.message : NO_KEY;
       setView({ at: "broken", why });
     } finally {
@@ -302,7 +328,8 @@ function Panel() {
 
       {view.at === "thread" && (
         <ThreadView
-          messages={messages}
+          messages={[...messages, ...pending]}
+          pending={pending}
           onSend={send}
           typing={agentTyping}
           seen={seen}

@@ -13,11 +13,13 @@ export function ThreadView({
   messages,
   greeting,
   onSend,
+  pending = [],
   typing = false,
   seen = false,
   onTyping,
 }: {
   messages: ChatMessage[];
+  pending?: ChatMessage[];
   greeting?: string | null;
   onSend: (body: string) => void;
   typing?: boolean;
@@ -46,7 +48,11 @@ export function ThreadView({
         )}
 
         {messages.map((message) => (
-          <Bubble key={message.id} message={message} />
+          <Bubble
+            key={message.client_msg_id ?? message.id}
+            message={message}
+            waiting={pending.some((p) => p.client_msg_id === message.client_msg_id)}
+          />
         ))}
 
         {seen && !typing && (
@@ -93,7 +99,7 @@ export function ThreadView({
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
+function Bubble({ message, waiting = false }: { message: ChatMessage; waiting?: boolean }) {
   const mine = message.sender === "customer";
   const at = new Date(message.at);
 
@@ -108,13 +114,14 @@ function Bubble({ message }: { message: ChatMessage }) {
         className={cn(
           "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm",
           mine ? "bg-primary text-primary-foreground" : "bg-muted",
+          waiting && "opacity-60",
         )}
       >
         {message.body}
       </div>
       <span className="px-1 text-[11px] text-muted-foreground">
         {mine ? "You" : message.author} ·{" "}
-        {at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+        {waiting ? "sending…" : at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
       </span>
     </motion.div>
   );
