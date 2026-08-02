@@ -3,6 +3,7 @@ export type LiveEvent =
   | { t: "message"; conversation: number; seq: number }
   | { t: "typing"; conversation: number; who: "agent" | "customer"; name: string | null; on: boolean }
   | { t: "read"; conversation: number; who: "agent" | "customer" }
+  | { t: "summary"; conversation: number }
   | { t: "error"; code: string };
 
 export const TYPING_IDLE = 3000;

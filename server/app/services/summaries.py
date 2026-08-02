@@ -17,7 +17,7 @@ from app.models import (
     Message,
 )
 from app.models import PENDING as JOB_PENDING
-from app.services import jobs
+from app.services import events, jobs
 from app.services.security import utcnow
 from app.workspace_filter import all_workspaces, use_workspace
 
@@ -25,7 +25,7 @@ log = get_logger(__name__)
 
 REFRESH = "summary.refresh"
 QUIET_SECONDS = 30
-ENOUGH_NEW_MESSAGES = 4
+ENOUGH_NEW_MESSAGES = 1
 BATCH_LIMIT = 60
 KEYWORD_LIMIT = 16
 TIMEOUT_SECONDS = 30.0
@@ -213,4 +213,5 @@ async def refresh(db: AsyncSession, job: Job) -> None:
         db.add(row)
         await db.commit()
 
+    events.summary_ready(conversation)
     log.info("summary.updated", conversation_id=conversation.id, through_seq=reached)

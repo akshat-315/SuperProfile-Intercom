@@ -7,6 +7,7 @@ import { Composer } from "@/components/inbox/composer";
 import { ConversationHeader } from "@/components/inbox/conversation-header";
 import { CustomerRail } from "@/components/inbox/customer-rail";
 import { MessageBubble } from "@/components/inbox/message-bubble";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Member, team as teamApi } from "@/lib/auth";
 import { type ConversationDetail, type Message, announceChange, inbox } from "@/lib/inbox";
@@ -133,6 +134,24 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
           <div ref={bottom} />
         </div>
 
+        {detail.conversation.status === "resolved" ? (
+          <div className="flex items-center justify-between gap-3 border-t p-4">
+            <p className="text-sm text-muted-foreground">
+              This conversation is resolved. Reopen it to reply.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await inbox.setStatus(conversationId, "open");
+                await load();
+                announceChange();
+              }}
+            >
+              Reopen
+            </Button>
+          </div>
+        ) : (
         <Composer
           conversationId={conversationId}
           onSent={(text, clientId) =>
@@ -155,6 +174,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
             setPending((current) => current.filter((m) => m.client_msg_id !== clientId))
           }
         />
+        )}
       </div>
 
       <CustomerRail row={detail.conversation} />

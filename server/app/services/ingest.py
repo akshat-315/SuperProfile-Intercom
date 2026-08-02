@@ -167,6 +167,8 @@ async def ingest(db: AsyncSession, job) -> None:
         conversation = await thread_for(db, headers)
         if conversation is None:
             conversation = await start_thread(db, workspace, identified.customer.id, subject, now)
+        else:
+            widget.reopen(conversation)
 
         try:
             message = await inbox.add_message(

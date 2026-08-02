@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   assistant,
   insertIntoReply,
 } from "@/lib/articles";
+import { PRESENCE } from "@/lib/socket";
 
 const LABELS: [keyof Summary, string][] = [
   ["issue", "Problem"],
@@ -31,12 +32,12 @@ function Results({ items }: { items: Suggestion[] }) {
         <li key={item.id}>
           <button
             type="button"
-            onClick={() => insertIntoReply(item.title)}
+            onClick={() => insertIntoReply(item.url)}
             className="w-full rounded-md border px-2.5 py-2 text-left text-xs transition-colors hover:bg-muted"
           >
             <span className="block font-medium leading-snug">{item.title}</span>
             <span className="text-[10px] text-muted-foreground">
-              click to add to your reply
+              click to add the link to your reply
             </span>
           </button>
         </li>
@@ -53,6 +54,16 @@ export function Assistant({ conversationId }: { conversationId: number }) {
   const [term, setTerm] = useState("");
   const [found, setFound] = useState<Suggestion[] | null>(null);
 
+  const load = useCallback(
+    (signal?: AbortSignal) =>
+      assistant
+        .summary(conversationId, signal)
+        .then(setSummary)
+        .catch(() => undefined)
+        .finally(() => setLoading(false)),
+    [conversationId],
+  );
+
   useEffect(() => {
     const controller = new AbortController();
     setSummary(null);
@@ -60,13 +71,18 @@ export function Assistant({ conversationId }: { conversationId: number }) {
     setFound(null);
     setTerm("");
     setLoading(true);
-    assistant
-      .summary(conversationId, controller.signal)
-      .then(setSummary)
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
+    void load(controller.signal);
     return () => controller.abort();
-  }, [conversationId]);
+  }, [conversationId, load]);
+
+  useEffect(() => {
+    const ready = (event: Event) => {
+      const signal = (event as CustomEvent<{ t: string; conversation: number }>).detail;
+      if (signal.t === "summary" && signal.conversation === conversationId) void load();
+    };
+    window.addEventListener(PRESENCE, ready);
+    return () => window.removeEventListener(PRESENCE, ready);
+  }, [conversationId, load]);
 
   async function suggest() {
     setBusy(true);
@@ -131,12 +147,15 @@ export function Assistant({ conversationId }: { conversationId: number }) {
           {busy ? "Looking…" : "Suggest articles"}
         </Button>
 
-        {suggested !== null && <Results items={suggested} />}
+        {found === null && suggested !== null && <Results items={suggested} />}
 
         <div className="flex gap-1.5 pt-1">
           <Input
             value={term}
-            onChange={(e) => setTerm(e.target.value)}
+            onChange={(e) => {
+              setTerm(e.target.value);
+              if (!e.target.value.trim()) setFound(null);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();

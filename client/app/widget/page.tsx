@@ -174,6 +174,7 @@ function Panel() {
           if (mine) setSeen(event.who === "agent");
           return;
         }
+        if (event.t !== "message") return;
         if (mine) {
           if (event.seq > seqRef.current) void reload(current.id, seqRef.current);
           return;
