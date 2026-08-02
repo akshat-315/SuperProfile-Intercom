@@ -21,9 +21,7 @@ class Connection:
     user_id: int | None = None
     role: str | None = None
     customer_id: int | None = None
-    queue: asyncio.Queue[dict] = field(
-        default_factory=lambda: asyncio.Queue(maxsize=QUEUE_LIMIT)
-    )
+    queue: asyncio.Queue[dict] = field(default_factory=lambda: asyncio.Queue(maxsize=QUEUE_LIMIT))
     closing: asyncio.Task | None = None
 
     def offer(self, payload: dict) -> None:
@@ -85,9 +83,7 @@ class Registry:
         return reached
 
     @staticmethod
-    def _forget(
-        holders: dict[int, set[Connection]], key: int, connection: Connection
-    ) -> None:
+    def _forget(holders: dict[int, set[Connection]], key: int, connection: Connection) -> None:
         held = holders.get(key)
         if held is None:
             return

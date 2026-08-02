@@ -3,7 +3,6 @@ import secrets
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
-from urllib.parse import urlsplit
 
 import structlog
 from fastapi import FastAPI, Request, Response
