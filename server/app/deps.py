@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionDep
 from app.errors import AppError
-from app.models import ADMIN, User, Workspace, touch_last_seen
+from app.models import ADMIN, Customer, User, Workspace, touch_last_seen
+from app.services import visitor as visitor_tokens
 from app.services import workspaces
 from app.services.security import SESSION_COOKIE, read_session, utcnow
 from app.workspace_filter import all_workspaces, use_workspace
@@ -17,6 +18,14 @@ NOT_SIGNED_IN = "You need to sign in to do that."
 NO_WORKSPACE = "Create or join a workspace first."
 NOT_ADMIN = "Only an admin can do that."
 NOT_VERIFIED = "Confirm your email address first."
+CHAT_SESSION_GONE = "This chat session has expired. Reload the page to start again."
+
+
+def client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 @dataclass(frozen=True)
@@ -100,3 +109,39 @@ async def verified_admin_in_workspace(signed_in: Admin) -> SignedInUser:
 
 
 VerifiedAdmin = Annotated[SignedInUser, Depends(verified_admin_in_workspace)]
+
+
+@dataclass(frozen=True)
+class ChatVisitor:
+    customer: Customer
+    workspace_id: int
+    visitor_id: str
+    db: AsyncSession
+
+
+def _chat_session_gone() -> AppError:
+    return AppError("chat_session_gone", CHAT_SESSION_GONE, status_code=401)
+
+
+async def chat_visitor(request: Request, db: SessionDep) -> AsyncIterator[ChatVisitor]:
+    scheme, _, token = (request.headers.get("authorization") or "").partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        raise _chat_session_gone()
+
+    session = visitor_tokens.read_session(token.strip(), now=utcnow())
+    if session is None:
+        raise _chat_session_gone()
+
+    with use_workspace(session.workspace_id):
+        customer = await db.scalar(select(Customer).where(Customer.id == session.customer_id))
+        if customer is None:
+            raise _chat_session_gone()
+        yield ChatVisitor(
+            customer=customer,
+            workspace_id=session.workspace_id,
+            visitor_id=session.visitor_id,
+            db=db,
+        )
+
+
+Visitor = Annotated[ChatVisitor, Depends(chat_visitor)]

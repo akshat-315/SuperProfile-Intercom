@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import SessionDep
-from app.deps import SignedIn
+from app.deps import SignedIn, client_ip
 from app.models import User, Workspace
 from app.schemas.auth import (
     LoginRequest,
@@ -20,13 +20,6 @@ from app.services import invites, outbox, ratelimit, verification, workspaces
 from app.services.security import SESSION_COOKIE, SESSION_TTL, sign_session, utcnow
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
-def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
 
 
 def workspace_out(workspace: Workspace) -> WorkspaceOut:
