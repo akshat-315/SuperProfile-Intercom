@@ -60,9 +60,7 @@ async def add_category(
 
 
 async def category_by_id(db: AsyncSession, category_id: int) -> ArticleCategory:
-    found = await db.scalar(
-        select(ArticleCategory).where(ArticleCategory.id == category_id)
-    )
+    found = await db.scalar(select(ArticleCategory).where(ArticleCategory.id == category_id))
     if found is None:
         raise not_found(CATEGORY_NOT_FOUND)
     return found
@@ -163,7 +161,9 @@ def terms(text: str) -> list[str]:
     return list(seen)[:MAX_TERMS]
 
 
-async def search(db: AsyncSession, text: str, *, limit: int = SUGGESTIONS) -> list[tuple[Article, float]]:
+async def search(
+    db: AsyncSession, text: str, *, limit: int = SUGGESTIONS
+) -> list[tuple[Article, float]]:
     words = terms(text)
     if not words:
         return []

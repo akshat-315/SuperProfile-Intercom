@@ -4,7 +4,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import session_factory
@@ -72,38 +72,53 @@ async def run_due(db: AsyncSession, *, now: datetime) -> int:
     )
 
     for job in due:
-        job.attempts += 1
-        try:
-            handler = HANDLERS[job.kind]
-        except KeyError:
-            job.status = FAILED
-            job.last_error = f"no handler registered for {job.kind!r}"
-            log.error("job.no_handler", job_id=job.id, kind=job.kind)
+        job_id, kind, attempts = job.id, job.kind, job.attempts + 1
+
+        handler = HANDLERS.get(kind)
+        if handler is None:
+            error = f"no handler registered for {kind!r}"
+            await _record(db, job_id, status=FAILED, attempts=attempts, error=error)
+            log.error("job.no_handler", job_id=job_id, kind=kind)
             continue
 
         try:
             await handler(db, job)
         except Exception as exc:
-            job.last_error = f"{type(exc).__name__}: {exc}"[:ERROR_LIMIT]
-            if job.attempts >= MAX_ATTEMPTS:
-                job.status = FAILED
-                log.error("job.gave_up", job_id=job.id, kind=job.kind, error=job.last_error)
+            error = f"{type(exc).__name__}: {exc}"[:ERROR_LIMIT]
+            if attempts >= MAX_ATTEMPTS:
+                await _record(db, job_id, status=FAILED, attempts=attempts, error=error)
+                log.error("job.gave_up", job_id=job_id, kind=kind, error=error)
             else:
-                job.run_at = now + backoff(job.attempts)
-                log.warning(
-                    "job.retrying",
-                    job_id=job.id,
-                    kind=job.kind,
-                    attempt=job.attempts,
-                    error=job.last_error,
+                await _record(
+                    db,
+                    job_id,
+                    status=PENDING,
+                    attempts=attempts,
+                    error=error,
+                    run_at=now + backoff(attempts),
                 )
+                log.warning("job.retrying", job_id=job_id, kind=kind, attempt=attempts, error=error)
         else:
-            job.status = DONE
-            job.last_error = None
-            log.info("job.done", job_id=job.id, kind=job.kind)
+            await _record(db, job_id, status=DONE, attempts=attempts, error=None)
+            log.info("job.done", job_id=job_id, kind=kind)
 
     await db.commit()
     return len(due)
+
+
+async def _record(
+    db: AsyncSession,
+    job_id: int,
+    *,
+    status: str,
+    attempts: int,
+    error: str | None,
+    run_at: datetime | None = None,
+) -> None:
+    values: dict[str, Any] = {"status": status, "attempts": attempts, "last_error": error}
+    if run_at is not None:
+        values["run_at"] = run_at
+    await db.execute(update(Job).where(Job.id == job_id).values(**values))
 
 
 async def run_forever(stop: asyncio.Event) -> None:
