@@ -6,26 +6,64 @@ from app.logging import get_logger
 log = get_logger(__name__)
 
 RESEND_URL = "https://api.resend.com/emails"
+RECEIVING_URL = "https://api.resend.com/emails/receiving"
 TIMEOUT_SECONDS = 10.0
 
 
-async def send(*, to: str, subject: str, html: str, text: str) -> bool:
+class MailUnavailable(Exception):
+    pass
+
+
+async def fetch_received(email_id: str) -> dict:
+    if not settings.mail_configured:
+        raise MailUnavailable("no mail credentials configured")
+
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            response = await client.get(
+                f"{RECEIVING_URL}/{email_id}",
+                headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        raise MailUnavailable(f"{type(exc).__name__}: {exc}") from exc
+
+    if response.status_code >= 400:
+        raise MailUnavailable(f"resend returned {response.status_code}: {response.text[:200]}")
+    return response.json()
+
+
+async def send(
+    *,
+    to: str,
+    subject: str,
+    html: str,
+    text: str,
+    sender: str | None = None,
+    reply_to: str | None = None,
+    headers: dict[str, str] | None = None,
+) -> bool:
     if not settings.mail_configured:
         log.warning("mail.not_configured", to=to, subject=subject)
         return False
+
+    body: dict = {
+        "from": sender or settings.sender,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }
+    if reply_to:
+        body["reply_to"] = reply_to
+    if headers:
+        body["headers"] = headers
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
             response = await client.post(
                 RESEND_URL,
                 headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={
-                    "from": settings.sender,
-                    "to": [to],
-                    "subject": subject,
-                    "html": html,
-                    "text": text,
-                },
+                json=body,
             )
     except httpx.HTTPError as exc:
         log.error("mail.send_failed", to=to, error=f"{type(exc).__name__}: {exc}")

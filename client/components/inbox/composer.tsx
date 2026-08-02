@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, CornerDownLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { SubmitButton } from "@/components/submit-button";
@@ -14,6 +14,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { SNOOZE_CHOICES, announceChange, inbox, snoozeUntil } from "@/lib/inbox";
+import { typingSignal } from "@/lib/live";
+import { inboxSend } from "@/lib/socket";
 
 export function Composer({
   conversationId,
@@ -28,6 +30,12 @@ export function Composer({
 }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const typing = useMemo(
+    () => typingSignal({ stop: () => undefined, send: inboxSend }, conversationId),
+    [conversationId],
+  );
+
+  useEffect(() => typing.done, [typing]);
 
   async function send(resolve = false) {
     const text = body.trim();
@@ -72,7 +80,10 @@ export function Composer({
     <div className="border-t p-3">
       <Textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+          typing.keystroke();
+        }}
         placeholder="Write a reply…"
         rows={3}
         className="resize-none"

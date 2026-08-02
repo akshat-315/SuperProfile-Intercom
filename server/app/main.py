@@ -10,8 +10,8 @@ from fastapi import FastAPI, Request, Response
 from app.config import settings
 from app.errors import envelope, register_error_handlers
 from app.logging import configure_logging, get_logger
-from app.routers import auth, dev, health, inbox, invites, team, widget, workspaces, ws
-from app.services import jobs, outbox  # noqa: F401  handlers register on import
+from app.routers import auth, dev, health, hooks, inbox, invites, team, widget, workspaces, ws
+from app.services import ingest, jobs, outbox  # noqa: F401  handlers register on import
 
 log = get_logger(__name__)
 
@@ -42,6 +42,7 @@ app.include_router(invites.router)
 app.include_router(inbox.router)
 app.include_router(widget.router)
 app.include_router(ws.router)
+app.include_router(hooks.router)
 app.include_router(dev.router)
 
 

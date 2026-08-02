@@ -9,6 +9,7 @@ import { ThreadSummary } from "@/components/widget/thread-summary";
 import { ThreadView } from "@/components/widget/thread-view";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
+import { type Live, typingSignal } from "@/lib/live";
 import {
   type ChatMessage,
   SESSION_GONE,
@@ -46,7 +47,10 @@ function Panel() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [ready, setReady] = useState(false);
+  const [agentTyping, setAgentTyping] = useState(false);
+  const [seen, setSeen] = useState(false);
   const viewRef = useRef<View>({ at: "loading" });
+  const liveRef = useRef<Live | null>(null);
   viewRef.current = view;
 
   const identify = useCallback(
@@ -110,6 +114,23 @@ function Panel() {
     window.parent.postMessage({ type: "unread", count: unread }, "*");
   }, [threads]);
 
+  const typingRef = useRef<ReturnType<typeof typingSignal> | null>(null);
+
+  useEffect(() => {
+    if (view.at !== "thread" || liveRef.current === null) {
+      typingRef.current?.done();
+      typingRef.current = null;
+      return;
+    }
+    typingRef.current = typingSignal(liveRef.current, view.id);
+    setAgentTyping(false);
+    setSeen(false);
+    return () => {
+      typingRef.current?.done();
+      typingRef.current = null;
+    };
+  }, [view]);
+
   const reload = useCallback(
     async (id: number) => {
       const detail = await withSession((token) => readThread(token, id));
@@ -123,17 +144,38 @@ function Panel() {
 
   useEffect(() => {
     if (!ready) return;
-    return connectPanel(
+    const live = connectPanel(
       () => withSession(panelTicket),
       (event) => {
+        if (event.t === "error") return;
+        if (event.t === "resync") {
+          void refreshList();
+          return;
+        }
+
         const current = viewRef.current;
-        if (event.t === "message" && current.at === "thread" && current.id === event.conversation) {
+        const mine = current.at === "thread" && current.id === event.conversation;
+
+        if (event.t === "typing") {
+          if (mine) setAgentTyping(event.who === "agent" && event.on);
+          return;
+        }
+        if (event.t === "read") {
+          if (mine) setSeen(event.who === "agent");
+          return;
+        }
+        if (mine) {
           void reload(current.id);
           return;
         }
         void refreshList();
       },
     );
+    liveRef.current = live;
+    return () => {
+      liveRef.current = null;
+      live.stop();
+    };
   }, [ready, withSession, refreshList, reload]);
 
   async function open(id: number) {
@@ -258,7 +300,15 @@ function Panel() {
 
       {view.at === "new" && <ThreadView messages={[]} greeting={greeting} onSend={send} />}
 
-      {view.at === "thread" && <ThreadView messages={messages} onSend={send} />}
+      {view.at === "thread" && (
+        <ThreadView
+          messages={messages}
+          onSend={send}
+          typing={agentTyping}
+          seen={seen}
+          onTyping={() => typingRef.current?.keystroke()}
+        />
+      )}
     </>
   );
 }

@@ -13,10 +13,16 @@ export function ThreadView({
   messages,
   greeting,
   onSend,
+  typing = false,
+  seen = false,
+  onTyping,
 }: {
   messages: ChatMessage[];
   greeting?: string | null;
   onSend: (body: string) => void;
+  typing?: boolean;
+  seen?: boolean;
+  onTyping?: () => void;
 }) {
   const [body, setBody] = useState("");
   const bottom = useRef<HTMLDivElement>(null);
@@ -42,6 +48,21 @@ export function ThreadView({
         {messages.map((message) => (
           <Bubble key={message.id} message={message} />
         ))}
+
+        {seen && !typing && (
+          <p className="text-right text-[11px] text-muted-foreground">Seen</p>
+        )}
+        {typing && (
+          <div className="flex w-fit gap-1 rounded-2xl bg-muted px-4 py-3">
+            {[0, 1, 2].map((dot) => (
+              <span
+                key={dot}
+                className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60"
+                style={{ animationDelay: `${dot * 120}ms` }}
+              />
+            ))}
+          </div>
+        )}
         <div ref={bottom} />
       </div>
 
@@ -49,7 +70,10 @@ export function ThreadView({
         <div className="flex items-end gap-2">
           <Textarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => {
+              setBody(e.target.value);
+              onTyping?.();
+            }}
             placeholder="Write a message…"
             rows={1}
             className="max-h-28 min-h-9 resize-none py-2"

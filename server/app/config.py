@@ -21,8 +21,10 @@ class Settings(BaseSettings):
     app_url: str = "http://localhost:3000"
 
     resend_api_key: str = ""
+    resend_webhook_secret: str = ""
     email_domain: str = "aksht.dev"
     email_from: str = ""
+    inbound_domain: str = ""
 
     @property
     def is_production(self) -> bool:
@@ -48,6 +50,13 @@ class Settings(BaseSettings):
     @property
     def expose_dev_links(self) -> bool:
         return not self.is_production
+
+    @property
+    def inbound_configured(self) -> bool:
+        return bool(self.resend_webhook_secret and self.inbound_domain)
+
+    def inbound_address(self, token: str) -> str:
+        return f"{token}@{self.inbound_domain}"
 
     @model_validator(mode="after")
     def _check_session_secret(self) -> Self:

@@ -213,6 +213,8 @@ async def add_message(
     body: str,
     client_msg_id: UUID | None,
     now: datetime,
+    external_id: str | None = None,
+    in_reply_to: str | None = None,
 ) -> Message:
     text = body.strip()
     message: Message | None = None
@@ -226,6 +228,8 @@ async def add_message(
             author_user_id=author_user_id,
             body_text=text,
             client_msg_id=client_msg_id,
+            external_id=external_id,
+            in_reply_to=in_reply_to,
         )
         try:
             async with db.begin_nested():

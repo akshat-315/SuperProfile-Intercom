@@ -53,10 +53,12 @@ async def membership_in(db: AsyncSession, user: User, workspace_id: int) -> Memb
 
 
 async def create(db: AsyncSession, user: User, *, name: str, now: datetime) -> Membership:
+    slug = await _free_slug(db, name)
     workspace = Workspace(
         name=name.strip(),
-        slug=await _free_slug(db, name),
+        slug=slug,
         widget_key=new_widget_key(),
+        inbound_token=slug,
     )
     db.add(workspace)
     await db.flush()

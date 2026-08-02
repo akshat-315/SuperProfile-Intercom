@@ -19,8 +19,10 @@ class Connection:
     socket: WebSocket
     workspace_id: int
     user_id: int | None = None
+    name: str | None = None
     role: str | None = None
     customer_id: int | None = None
+    strikes: int = 0
     queue: asyncio.Queue[dict] = field(default_factory=lambda: asyncio.Queue(maxsize=QUEUE_LIMIT))
     closing: asyncio.Task | None = None
 
@@ -40,6 +42,9 @@ class Connection:
     async def _close(self) -> None:
         with suppress(Exception):
             await self.socket.close(code=TOO_SLOW)
+
+    def whoami(self) -> str:
+        return f"agent:{self.user_id}" if self.user_id else f"visitor:{self.customer_id}"
 
     def may_see(self, assignee_user_id: int | None) -> bool:
         if self.role == ADMIN:

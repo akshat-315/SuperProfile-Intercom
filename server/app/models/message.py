@@ -18,6 +18,7 @@ class Message(HasWorkspaceId, BaseTable):
     __table_args__ = (
         UniqueConstraint("conversation_id", "seq", name="uq_message_seq"),
         UniqueConstraint("conversation_id", "client_msg_id", name="uq_message_client_id"),
+        UniqueConstraint("workspace_id", "external_id", name="uq_message_external_id"),
     )
 
     id: Mapped[Id]
@@ -31,4 +32,6 @@ class Message(HasWorkspaceId, BaseTable):
     )
     body_text: Mapped[str] = mapped_column(Text, nullable=False)
     client_msg_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True))
+    external_id: Mapped[str | None] = mapped_column(String(255))
+    in_reply_to: Mapped[str | None] = mapped_column(String(255), index=True)
     read_at: Mapped[Timestamp | None]

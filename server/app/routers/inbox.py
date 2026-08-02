@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from app.deps import InWorkspace
 from app.errors import AppError
-from app.models import RESOLVED, STATUSES, Conversation, Message, User
+from app.models import EMAIL, RESOLVED, STATUSES, Conversation, Message, User
 from app.schemas.inbox import (
     AssigneeOut,
     AssignRequest,
@@ -17,7 +17,7 @@ from app.schemas.inbox import (
     SnoozeRequest,
     StatusRequest,
 )
-from app.services import events
+from app.services import events, outbox
 from app.services import inbox as service
 from app.services.security import utcnow
 
@@ -98,8 +98,10 @@ async def get_conversation(conversation_id: int, signed_in: InWorkspace) -> Conv
     thread = await service.get_thread(
         signed_in.db, conversation_id, user=signed_in.user, role=signed_in.role or ""
     )
-    await service.mark_read(signed_in.db, thread.conversation, utcnow())
+    cleared = await service.mark_read(signed_in.db, thread.conversation, utcnow())
     await signed_in.db.commit()
+    if cleared:
+        events.read_by(thread.conversation, who=events.AGENT)
 
     return ConversationDetail(
         conversation=row_out(
@@ -130,6 +132,12 @@ async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace
         client_msg_id=body.client_msg_id,
         now=now,
     )
+
+    if conversation.channel == EMAIL and message.external_id is None:
+        message.external_id = outbox.new_message_id()
+        await outbox.queue_reply(
+            signed_in.db, message=message, workspace_id=conversation.workspace_id
+        )
 
     if body.snooze_until is not None:
         await service.snooze(signed_in.db, conversation, _aware(body.snooze_until))
