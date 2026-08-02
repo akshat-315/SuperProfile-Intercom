@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronsUpDown, FileText, Inbox, Settings, Users } from "lucide-react";
+import { ChevronsUpDown, FileText, Inbox, Plus, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
+import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog";
 import { Initials } from "@/components/initials";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ const NAV = [
   { href: ROUTES.inbox, label: "Inbox", short: "Inbox", icon: Inbox },
   { href: ROUTES.articles, label: "Help articles", short: "Articles", icon: FileText },
   { href: ROUTES.team, label: "Team", short: "Team", icon: Users },
-  { href: ROUTES.workspace, label: "Workspace", short: "Settings", icon: Settings },
+  { href: ROUTES.settings, label: "Settings", short: "Settings", icon: Settings },
 ];
 
 /** A thread is level two on a phone: it owns the whole screen, tab bar included. */
@@ -36,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchMe()
@@ -74,6 +76,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </DropdownMenuItem>
       ))}
       <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={() => setCreating(true)}>
+        <Plus className="size-4" />
+        Create workspace
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
       <DropdownMenuItem
         onClick={async () => {
           await auth.logout();
@@ -87,6 +94,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-paper md:flex-row">
+      <CreateWorkspaceDialog open={creating} onOpenChange={setCreating} />
+
       {/* Phone: a 56px app bar. The workspace switcher and sign-out live behind
           the avatar, because there is no left rail to hold them. */}
       {!insideThread && (

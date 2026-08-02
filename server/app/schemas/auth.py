@@ -32,6 +32,20 @@ class MembershipOut(BaseModel):
     role: str
 
 
+class SetupOut(BaseModel):
+    """The three things a new workspace needs before anyone can use it.
+
+    None of it is secret. The widget key is public by design - it sits in the
+    page source of every site that installs the panel - and the support address
+    is one customers write to. So any member may read this, not only admins.
+    """
+
+    widget_key: str
+    install_snippet: str
+    support_email: str | None
+    help_url: str
+
+
 class UserOut(BaseModel):
     id: int
     name: str

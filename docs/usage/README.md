@@ -69,7 +69,7 @@ Every workspace has a **widget key** — a string beginning `wk_`. It says "this
 workspace" and nothing more. You paste one line of script onto your site:
 
 ```html
-<script src="https://your-app-domain/widget.js" data-key="wk_your_key_here"></script>
+<script src="https://your-app-domain/widget.js" data-key="wk_your_key_here"></script> (your-app-domain = superprofintercom in this case)
 ```
 
 That script adds a chat button in the bottom corner of every page it is on. Nothing else on your
