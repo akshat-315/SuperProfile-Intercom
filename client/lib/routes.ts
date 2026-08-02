@@ -7,6 +7,7 @@ export const ROUTES = {
   welcome: "/welcome",
   workspaces: "/workspaces",
   inbox: "/inbox",
+  articles: "/articles",
   team: "/settings/team",
   workspace: "/settings/workspace",
   invite: (code: string) => `/invite/${encodeURIComponent(code)}`,
