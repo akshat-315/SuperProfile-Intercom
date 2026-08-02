@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, Inbox, Settings, Users } from "lucide-react";
+import { ChevronsUpDown, FileText, Inbox, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import { type Me, fetchMe, stageOf } from "@/lib/session";
 
 const NAV = [
   { href: ROUTES.inbox, label: "Inbox", icon: Inbox },
+  { href: ROUTES.articles, label: "Help articles", icon: FileText },
   { href: ROUTES.team, label: "Team", icon: Users },
   { href: ROUTES.workspace, label: "Workspace", icon: Settings },
 ];

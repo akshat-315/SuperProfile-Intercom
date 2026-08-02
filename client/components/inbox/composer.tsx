@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { SNOOZE_CHOICES, announceChange, inbox, snoozeUntil } from "@/lib/inbox";
+import { INSERT } from "@/lib/articles";
 import { typingSignal } from "@/lib/live";
 import { inboxSend } from "@/lib/socket";
 
@@ -36,6 +37,15 @@ export function Composer({
   );
 
   useEffect(() => typing.done, [typing]);
+
+  useEffect(() => {
+    const add = (event: Event) => {
+      const text = (event as CustomEvent<string>).detail;
+      setBody((current) => (current ? `${current.trimEnd()}\n\n${text}` : text));
+    };
+    window.addEventListener(INSERT, add);
+    return () => window.removeEventListener(INSERT, add);
+  }, []);
 
   async function send(resolve = false) {
     const text = body.trim();

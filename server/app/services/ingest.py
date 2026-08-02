@@ -1,7 +1,6 @@
 import re
 from datetime import datetime
 from email.utils import parseaddr
-from html.parser import HTMLParser
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -11,6 +10,7 @@ from app.config import settings
 from app.logging import get_logger
 from app.models import EMAIL, INBOUND, OPEN, Conversation, Message, Workspace
 from app.services import events, inbox, jobs, mail, widget
+from app.services.html import to_text
 from app.services.security import utcnow
 from app.workspace_filter import all_workspaces, use_workspace
 
@@ -27,34 +27,6 @@ QUOTE_MARKERS = (
     re.compile(r"^\s*_{10,}\s*$", re.MULTILINE),
     re.compile(r"^\s*From:\s.+\bSent:\s", re.MULTILINE),
 )
-
-
-class _Stripper(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.parts: list[str] = []
-        self.skipping = False
-
-    def handle_starttag(self, tag: str, attrs: list) -> None:
-        if tag in {"script", "style"}:
-            self.skipping = True
-        elif tag in {"br", "p", "div", "tr", "li"}:
-            self.parts.append("\n")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag in {"script", "style"}:
-            self.skipping = False
-
-    def handle_data(self, data: str) -> None:
-        if not self.skipping:
-            self.parts.append(data)
-
-
-def to_text(html: str) -> str:
-    stripper = _Stripper()
-    stripper.feed(html)
-    text = "".join(stripper.parts)
-    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def without_quotes(text: str) -> str:

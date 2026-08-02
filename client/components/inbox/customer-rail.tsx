@@ -2,6 +2,7 @@
 
 import { Mail, MessageSquare, User } from "lucide-react";
 
+import { Assistant } from "@/components/inbox/assistant";
 import { Separator } from "@/components/ui/separator";
 import type { ConversationRow } from "@/lib/inbox";
 
@@ -45,6 +46,7 @@ export function CustomerRail({ row }: { row: ConversationRow }) {
           <dd>{row.assignee?.name ?? "Nobody yet"}</dd>
         </div>
       </dl>
+          <Assistant conversationId={row.id} />
     </aside>
   );
 }
