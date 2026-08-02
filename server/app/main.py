@@ -15,6 +15,7 @@ from app.routers import (
     auth,
     dev,
     health,
+    help,
     hooks,
     inbox,
     invites,
@@ -53,6 +54,7 @@ app.include_router(team.router)
 app.include_router(invites.router)
 app.include_router(inbox.router)
 app.include_router(articles.router)
+app.include_router(help.router)
 app.include_router(widget.router)
 app.include_router(ws.router)
 app.include_router(hooks.router)

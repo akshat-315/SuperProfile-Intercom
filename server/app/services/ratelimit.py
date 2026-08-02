@@ -31,6 +31,7 @@ WIDGET_START = Limit(allowed=5, window_seconds=300, name="widget_start")
 WIDGET_SEND = Limit(allowed=30, window_seconds=60, name="widget_send")
 WS_TICKET = Limit(allowed=30, window_seconds=60, name="ws_ticket")
 WS_TYPING = Limit(allowed=5, window_seconds=1, name="ws_typing")
+HELP_PUBLIC = Limit(allowed=60, window_seconds=60, name="help_public")
 
 
 class _Buckets:
