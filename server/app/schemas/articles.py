@@ -49,3 +49,13 @@ class Suggestion(BaseModel):
 
 class SuggestionList(BaseModel):
     items: list[Suggestion]
+
+
+class SummaryOut(BaseModel):
+    product: str = ""
+    issue: str = ""
+    intent: str = ""
+    tried: str = ""
+    status: str = ""
+    through_seq: int = 0
+    updated_at: datetime | None = None

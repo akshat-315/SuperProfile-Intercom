@@ -30,6 +30,38 @@ export type ArticleInput = {
   category_id: number | null;
 };
 
+export type Suggestion = {
+  id: number;
+  title: string;
+  slug: string;
+  score: number;
+};
+
+export type Summary = {
+  product: string;
+  issue: string;
+  intent: string;
+  tried: string;
+  status: string;
+  through_seq: number;
+  updated_at: string | null;
+};
+
+export const INSERT = "inbox:insert";
+
+export function insertIntoReply(text: string): void {
+  window.dispatchEvent(new CustomEvent(INSERT, { detail: text }));
+}
+
+export const assistant = {
+  summary: (conversationId: number, signal?: AbortSignal) =>
+    api.get<Summary | null>(`/conversations/${conversationId}/summary`, signal),
+  suggestions: (conversationId: number) =>
+    api.get<{ items: Suggestion[] }>(`/conversations/${conversationId}/suggestions`),
+  find: (q: string) =>
+    api.get<{ items: Suggestion[] }>(`/articles/search?q=${encodeURIComponent(q)}`),
+};
+
 export const articles = {
   list: (status?: ArticleStatus, signal?: AbortSignal) =>
     api.get<{ items: ArticleRow[] }>(

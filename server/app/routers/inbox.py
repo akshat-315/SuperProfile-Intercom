@@ -4,8 +4,8 @@ from fastapi import APIRouter, Query, status
 
 from app.deps import InWorkspace
 from app.errors import AppError
-from app.models import EMAIL, RESOLVED, STATUSES, Conversation, Message, User
-from app.schemas.articles import Suggestion, SuggestionList
+from app.models import EMAIL, RESOLVED, STATUSES, SUMMARY_FIELDS, Conversation, Message, User
+from app.schemas.articles import Suggestion, SuggestionList, SummaryOut
 from app.schemas.inbox import (
     AssigneeOut,
     AssignRequest,
@@ -117,6 +117,19 @@ async def get_conversation(conversation_id: int, signed_in: InWorkspace) -> Conv
             )
         ),
         messages=[message_out(m, thread.authors) for m in thread.messages],
+    )
+
+
+@router.get("/{conversation_id}/summary", response_model=SummaryOut | None)
+async def summary(conversation_id: int, signed_in: InWorkspace) -> SummaryOut | None:
+    conversation = await _mine(signed_in, conversation_id)
+    state = await summaries.state_of(signed_in.db, conversation.id)
+    if state is None:
+        return None
+    return SummaryOut(
+        **{field: str(state.state.get(field) or "") for field in SUMMARY_FIELDS},
+        through_seq=state.last_seq,
+        updated_at=state.updated_at,
     )
 
 
