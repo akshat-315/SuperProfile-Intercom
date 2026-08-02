@@ -22,6 +22,35 @@ assignment, snoozing and resolving, a knowledge base with full-text search and a
 centre, article suggestions offered to the agent while they type, and a rolling AI summary of each
 conversation so an agent picking up a long thread does not have to read it from the top.
 
+## Try it live
+
+Everything below is deployed and clickable, no install required.
+
+| What | Where |
+| --- | --- |
+| The demo shop | <https://superprofintercom.aksht.dev/demo/?app=https://superprofintercom.aksht.dev> |
+| The agent inbox | <https://superprofintercom.aksht.dev> |
+| The help centre | <https://superprofintercom.aksht.dev/help/superprofile> |
+
+The demo shop is a stand-in customer website with the chat widget embedded. The agent inbox is the
+app itself, where the resulting conversations land. The help centre is the demo workspace's public
+knowledge base.
+
+Sign in to the demo workspace as any of these; they all share the password `superprofile-demo-2026`.
+
+| Email | Name | Role |
+| --- | --- | --- |
+| `ananya@superprofile.demo` | Ananya Sharma | admin |
+| `rohan@superprofile.demo` | Rohan Verma | agent |
+| `kavya@superprofile.demo` | Kavya Nair | agent |
+
+The fastest way to see the whole product: open the demo shop in one window and the inbox in
+another signed in as Ananya, send a message from the shop, and watch it arrive in the inbox
+without a refresh. That is ten seconds and it is the entire idea.
+
+The `?app=` parameter is required because the demo page falls back to `localhost:3000` when it is
+absent, so the plain `/demo/` URL loads no widget at all — a known rough edge.
+
 ## What we did not build
 
 **Custom domains never shipped.** A shop's help centre lives at a path under the app's own domain

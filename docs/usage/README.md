@@ -233,7 +233,10 @@ is a button in the empty inbox that fills it with a handful of realistic convers
 chat and email, some assigned, some not — which is the quickest way to see the inbox working.
 That button is a development convenience and is switched off in a production build.
 
-**The demo shop page** is `demo/index.html` in the repository. It is a stand-in for a customer's
+**The demo shop page** is hosted at
+`https://superprofintercom.aksht.dev/demo/?app=https://superprofintercom.aksht.dev`. The `?app=`
+parameter is required because the page falls back to `localhost:3000` without it, so the plain
+`/demo/` URL loads no widget. It is a stand-in for a customer's
 website with the chat widget embedded, and it comes with a widget key already filled in, pointed
 at the demo workspace called SuperProfile. Open it, click the chat button, give a name and email,
 and send a message. It arrives in the SuperProfile inbox. There is also a box on that page for
@@ -246,5 +249,7 @@ returns "not found" even though the articles behind it are there and the API ser
 correctly. It is a deployment fault rather than a fault in the feature, and it is being looked
 at.
 
-There are no shared demo credentials. Signing up takes about a minute and gives you a workspace
-you can break freely.
+**The demo workspace sign-ins** all share the password `superprofile-demo-2026`:
+`ananya@superprofile.demo` (Ananya Sharma, admin), `rohan@superprofile.demo` (Rohan Verma, agent)
+and `kavya@superprofile.demo` (Kavya Nair, agent). Signing up with your own email instead takes
+about a minute and gives you a workspace you can break freely.
