@@ -4,12 +4,12 @@ A customer support platform. A shop puts a chat panel on its website and points 
 address at us; every question from either channel lands in one shared inbox its agents work all
 day. Many shops use the same installation and none of them can see each other's data.
 
-**New here? Read [`docs/usage/`](docs/usage/) first.** It walks through the product end to end -
+**New here? Read [`docs/usage/`](docs/usage/) first.** It walks through the product end to end —
 signing up, creating a workspace, inviting people, installing the widget, wiring up the support
 email, working the inbox, and publishing help articles. The design documents below assume you know
 what the thing does.
 
-## What it does
+## 1. What It Does
 
 A customer opens the chat panel on the shop's site and asks a question, or emails the shop's
 support address. Either way a conversation is created, and it appears in the agents' inbox within
@@ -22,7 +22,7 @@ assignment, snoozing and resolving, a knowledge base with full-text search and a
 centre, article suggestions offered to the agent while they type, and a rolling AI summary of each
 conversation so an agent picking up a long thread does not have to read it from the top.
 
-## Try it live
+## 2. Try It Live
 
 Everything below is deployed and clickable, no install required.
 
@@ -45,11 +45,11 @@ threaded, so the customer answers from their own mail client and never learns th
 tool involved.
 
 The address is not a mailbox anyone reads. Each workspace gets its own random token, and the part
-before the `@` is that token - `superprofile` here - so an incoming message can be traced to
+before the `@` is that token — `superprofile` here — so an incoming message can be traced to
 exactly one workspace before anything else happens. Our mail provider receives the message and
 tells us it has arrived; we fetch the body, check the signature over the raw bytes so nobody can
 forge a delivery, then decide whether it belongs to a conversation we already know about. That
-decision uses the message identifiers that mail clients pass around, never the subject line -
+decision uses the message identifiers that mail clients pass around, never the subject line —
 subjects get edited, translated and reused, and threading on them merges strangers' conversations
 together. If nothing matches, it becomes a new conversation. If the thread was already resolved,
 the customer's reply reopens it.
@@ -70,86 +70,106 @@ another signed in as Ananya, send a message from the shop, and watch it arrive i
 without a refresh. That is ten seconds and it is the entire idea.
 
 The `?app=` parameter is required because the demo page falls back to `localhost:3000` when it is
-absent, so the plain `/demo/` URL loads no widget at all - a known rough edge.
+absent, so the plain `/demo/` URL loads no widget at all — a known rough edge.
 
-## What we did not build
+## 3. What Was Intentionally Not Built
 
 **Custom domains never shipped.** A shop's help centre lives at a path under the app's own domain
-and nowhere else. There is no domain table, no certificate handling and no DNS work in the code -
+and nowhere else. There is no domain table, no certificate handling and no DNS work in the code —
 the hostname lookup exists as a function that always returns nothing. It was designed and not
 built; the knowledge-base document describes the intended design and says the same. If an older
 plan reads as though a shop can point its own domain here, that plan has drifted from the code.
 
-## What is missing, and what the next phase is
+## 4. Next Steps & Production Improvements
 
 The product works. What it does not yet have is the machinery you need to run it for someone other
 than yourself. These are known gaps, not oversights, roughly in the order I would close them. Each
 subsystem's own document goes deeper.
 
-**Observability - nothing watches this system.** Every request already writes one structured JSON
+### 4.1 Observability
+
+**Observability — nothing watches this system.** Every request already writes one structured JSON
 line with the method, route, status, duration and a request id, and the services log named events
 through the same logger. That is real, and it is all there is. The lines go to the container's
 standard output and nowhere else. Nothing collects or indexes them, so no one can ask "which
-requests took over a second this morning" without reading a file by hand. There are no metrics -
-no connected-socket count, no job queue depth, no error rate - and no tracing, so a slow reply
+requests took over a second this morning" without reading a file by hand. There are no metrics —
+no connected-socket count, no job queue depth, no error rate — and no tracing, so a slow reply
 cannot be blamed on the database, the language model or our own code without guessing. Nothing
 alerts: if the job runner stopped, the first to know would be a customer whose email never arrived.
 
 The fix is [OpenTelemetry](https://opentelemetry.io/) for instrumentation and
-[SigNoz](https://signoz.io/) as the place it lands - logs, metrics and traces in one tool rather
+[SigNoz](https://signoz.io/) as the place it lands — logs, metrics and traces in one tool rather
 than three. FastAPI, SQLAlchemy and httpx have off-the-shelf instrumentation, so request spans,
 every SQL query and the Azure calls come almost free; the trace id then threads into the existing
 structured logs so a line and its trace point at each other. The metrics worth adding by hand are
-connected sockets, queue depth, job failure rate and summary latency - the ones that would have
+connected sockets, queue depth, job failure rate and summary latency — the ones that would have
 caught the retry-forever bug while it was happening. Grafana with Loki and Tempo does the same job
 if you prefer the pieces separate. Note that self-hosted SigNoz runs ClickHouse and is not a light
 neighbour; on a small box it belongs elsewhere, or on their hosted tier.
 
-**No automated tests and no continuous integration.** Not a thin suite - none. Every claim in the
+### 4.2 Automated Tests & CI
+
+**No automated tests and no continuous integration.** Not a thin suite — none. Every claim in the
 design documents was checked by running the system by hand. That holds while one person keeps the
 whole thing in their head, and stops the day a second person changes something. The first tests
 worth writing are the ones covering the defects already named in the documents.
 
+### 4.3 Security & Abuse
+
 **Security and abuse.** The widget key is public by design, and the server accepts it from any
-origin with no cap on how many conversations one visitor may open - measured, not assumed. It
+origin with no cap on how many conversations one visitor may open — measured, not assumed. It
 needs a per-workspace list of allowed domains and a rate limit on conversation creation. There is
 also no audit trail: nothing records who resolved a conversation, changed a role or removed a
 member.
+
+### 4.4 Single-Process Architecture
 
 **It is still one process.** The connection registry, the socket tickets, the rate limiter and the
 job lock all live in memory, so a second API container breaks all four at once, silently. Postgres
 `LISTEN/NOTIFY` is the smallest thing that fixes them together, and the architecture document
 argues for doing it as one piece of work rather than four.
 
+### 4.5 Real-Time
+
 **Real-time.** Assignment, resolve and snooze do not notify anyone, so another agent's list can
-stay stale until their next message or tab focus - three function calls to close. Reconnecting
+stay stale until their next message or tab focus — three function calls to close. Reconnecting
 refetches the whole thread rather than replaying from the last sequence number, which is fine at
 this size and wasteful later. There is no cap on connections per address.
 
+### 4.6 Email
+
 **Email.** Quote and signature stripping is pattern matching, and mail clients are endlessly
 inventive, so some replies will still carry a tail of quoted text. Attachments are not handled at
-all - an inbound file is dropped, and an agent cannot send one. Bounces and delivery failures are
+all — an inbound file is dropped, and an agent cannot send one. Bounces and delivery failures are
 not surfaced, so a reply to a dead address looks successful.
+
+### 4.7 Knowledge Base
 
 **Knowledge base.** Search is English-only, because the text index is built with the English
 configuration. Articles cannot be deleted. Categories exist in the database and the API but the
 editor never sets one, so the feature is unreachable. There is no image upload, no draft preview,
 and no versioning, so an edit to a published article is live immediately with no way back.
 
+### 4.8 AI
+
 **AI.** The summary is best-effort: if the model is unavailable the conversation works and the
-panel simply shows nothing, which is the right failure but an invisible one - nothing tells an
+panel simply shows nothing, which is the right failure but an invisible one — nothing tells an
 agent the summary is stale. Cost is untracked. The refresh job scans the queue by payload with no
 index on it, which is cheap now and will not stay cheap.
+
+### 4.9 Inbox
 
 **Inbox.** No search across conversations, no filtering by tag or customer, no bulk actions, no
 canned replies, and no way to merge two conversations from the same person. These are the things
 an agent working eight hours a day asks for second, right after the inbox is fast.
 
+### 4.10 Deployment
+
 **Deployment.** One machine, no redundancy, and deploys drop every open socket because there is no
 second container to move traffic to. Backups are whatever the managed database provides. The demo
 page still needs its `?app=` parameter, which is a one-line fix nobody has made.
 
-## Running it locally
+## 5. Running Locally
 
 You need Python 3.13 with [uv](https://docs.astral.sh/uv/), Node 22, and a Postgres 16 you can
 reach. The quickest Postgres is a container:
@@ -190,9 +210,9 @@ One caveat on `docker compose --profile local-db up -d db`: that Postgres publis
 host, so it is only reachable from the other compose services. If you use it, `DATABASE_URL` must
 name `db` as the host, not `localhost`.
 
-## How it is deployed
+## 6. Deployment
 
-Two images built from this repository - `server/Dockerfile` and `client/Dockerfile` - plus a
+Two images built from this repository — `server/Dockerfile` and `client/Dockerfile` — plus a
 managed Postgres. `docker compose up` runs the Alembic migrations to completion first, then starts
 the API and the web app, each bound to localhost only. Nginx terminates TLS and is the only thing
 listening publicly: it sends `/api/`, `/ws/` and `/health` straight to the API, `/demo/` to a
@@ -203,7 +223,7 @@ One thing to get right at build time: `NEXT_PUBLIC_API_ORIGIN` is compiled into 
 and is what the browser uses to open its WebSocket. If it is missing the app still looks healthy
 and simply is not live. `API_ORIGIN` has a build-time guard; this one does not.
 
-## The documentation
+## 7. Documentation
 
 | Document | What it covers |
 |---|---|
