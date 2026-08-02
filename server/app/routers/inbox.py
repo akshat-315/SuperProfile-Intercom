@@ -137,9 +137,19 @@ async def summary(conversation_id: int, signed_in: InWorkspace) -> SummaryOut | 
 async def suggestions(conversation_id: int, signed_in: InWorkspace) -> SuggestionList:
     ratelimit.enforce(ratelimit.SUGGEST, str(signed_in.user.id))
     conversation = await _mine(signed_in, conversation_id)
+    assert signed_in.workspace is not None
     found = await help_articles.suggest(signed_in.db, conversation.id)
     return SuggestionList(
-        items=[Suggestion(id=a.id, title=a.title, slug=a.slug, score=score) for a, score in found]
+        items=[
+            Suggestion(
+                id=a.id,
+                title=a.title,
+                slug=a.slug,
+                url=help_articles.public_url(signed_in.workspace.slug, a.slug),
+                score=score,
+            )
+            for a, score in found
+        ]
     )
 
 

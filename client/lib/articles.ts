@@ -34,6 +34,7 @@ export type Suggestion = {
   id: number;
   title: string;
   slug: string;
+  url: string;
   score: number;
 };
 

@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.errors import AppError
 from app.logging import get_logger
 from app.models import DRAFT, INBOUND, PUBLISHED, Article, ArticleCategory, Message
@@ -18,6 +19,10 @@ MAX_TERMS = 40
 FLOOR = 1.0
 SUGGESTIONS = 3
 RECENT_CUSTOMER_MESSAGES = 5
+
+
+def public_url(workspace_slug: str, article_slug: str) -> str:
+    return f"{settings.app_url.rstrip('/')}/help/{workspace_slug}/{article_slug}"
 
 
 def not_found(message: str = NOT_FOUND) -> AppError:

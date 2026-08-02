@@ -32,12 +32,12 @@ function Results({ items }: { items: Suggestion[] }) {
         <li key={item.id}>
           <button
             type="button"
-            onClick={() => insertIntoReply(item.title)}
+            onClick={() => insertIntoReply(item.url)}
             className="w-full rounded-md border px-2.5 py-2 text-left text-xs transition-colors hover:bg-muted"
           >
             <span className="block font-medium leading-snug">{item.title}</span>
             <span className="text-[10px] text-muted-foreground">
-              click to add to your reply
+              click to add the link to your reply
             </span>
           </button>
         </li>
