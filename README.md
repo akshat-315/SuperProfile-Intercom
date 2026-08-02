@@ -80,6 +80,75 @@ the hostname lookup exists as a function that always returns nothing. It was des
 built; the knowledge-base document describes the intended design and says the same. If an older
 plan reads as though a shop can point its own domain here, that plan has drifted from the code.
 
+## What is missing, and what the next phase is
+
+The product works. What it does not yet have is the machinery you need to run it for someone other
+than yourself. These are known gaps, not oversights, roughly in the order I would close them. Each
+subsystem's own document goes deeper.
+
+**Observability — nothing watches this system.** Every request already writes one structured JSON
+line with the method, route, status, duration and a request id, and the services log named events
+through the same logger. That is real, and it is all there is. The lines go to the container's
+standard output and nowhere else. Nothing collects or indexes them, so no one can ask "which
+requests took over a second this morning" without reading a file by hand. There are no metrics —
+no connected-socket count, no job queue depth, no error rate — and no tracing, so a slow reply
+cannot be blamed on the database, the language model or our own code without guessing. Nothing
+alerts: if the job runner stopped, the first to know would be a customer whose email never arrived.
+
+The fix is [OpenTelemetry](https://opentelemetry.io/) for instrumentation and
+[SigNoz](https://signoz.io/) as the place it lands — logs, metrics and traces in one tool rather
+than three. FastAPI, SQLAlchemy and httpx have off-the-shelf instrumentation, so request spans,
+every SQL query and the Azure calls come almost free; the trace id then threads into the existing
+structured logs so a line and its trace point at each other. The metrics worth adding by hand are
+connected sockets, queue depth, job failure rate and summary latency — the ones that would have
+caught the retry-forever bug while it was happening. Grafana with Loki and Tempo does the same job
+if you prefer the pieces separate. Note that self-hosted SigNoz runs ClickHouse and is not a light
+neighbour; on a small box it belongs elsewhere, or on their hosted tier.
+
+**No automated tests and no continuous integration.** Not a thin suite — none. Every claim in the
+design documents was checked by running the system by hand. That holds while one person keeps the
+whole thing in their head, and stops the day a second person changes something. The first tests
+worth writing are the ones covering the defects already named in the documents.
+
+**Security and abuse.** The widget key is public by design, and the server accepts it from any
+origin with no cap on how many conversations one visitor may open — measured, not assumed. It
+needs a per-workspace list of allowed domains and a rate limit on conversation creation. There is
+also no audit trail: nothing records who resolved a conversation, changed a role or removed a
+member.
+
+**It is still one process.** The connection registry, the socket tickets, the rate limiter and the
+job lock all live in memory, so a second API container breaks all four at once, silently. Postgres
+`LISTEN/NOTIFY` is the smallest thing that fixes them together, and the architecture document
+argues for doing it as one piece of work rather than four.
+
+**Real-time.** Assignment, resolve and snooze do not notify anyone, so another agent's list can
+stay stale until their next message or tab focus — three function calls to close. Reconnecting
+refetches the whole thread rather than replaying from the last sequence number, which is fine at
+this size and wasteful later. There is no cap on connections per address.
+
+**Email.** Quote and signature stripping is pattern matching, and mail clients are endlessly
+inventive, so some replies will still carry a tail of quoted text. Attachments are not handled at
+all — an inbound file is dropped, and an agent cannot send one. Bounces and delivery failures are
+not surfaced, so a reply to a dead address looks successful.
+
+**Knowledge base.** Search is English-only, because the text index is built with the English
+configuration. Articles cannot be deleted. Categories exist in the database and the API but the
+editor never sets one, so the feature is unreachable. There is no image upload, no draft preview,
+and no versioning, so an edit to a published article is live immediately with no way back.
+
+**AI.** The summary is best-effort: if the model is unavailable the conversation works and the
+panel simply shows nothing, which is the right failure but an invisible one — nothing tells an
+agent the summary is stale. Cost is untracked. The refresh job scans the queue by payload with no
+index on it, which is cheap now and will not stay cheap.
+
+**Inbox.** No search across conversations, no filtering by tag or customer, no bulk actions, no
+canned replies, and no way to merge two conversations from the same person. These are the things
+an agent working eight hours a day asks for second, right after the inbox is fast.
+
+**Deployment.** One machine, no redundancy, and deploys drop every open socket because there is no
+second container to move traffic to. Backups are whatever the managed database provides. The demo
+page still needs its `?app=` parameter, which is a one-line fix nobody has made.
+
 ## Running it locally
 
 You need Python 3.13 with [uv](https://docs.astral.sh/uv/), Node 22, and a Postgres 16 you can
