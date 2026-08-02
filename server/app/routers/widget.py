@@ -13,7 +13,7 @@ from app.schemas.widget import (
     ThreadOut,
     VisitorOut,
 )
-from app.services import ratelimit
+from app.services import events, ratelimit
 from app.services import visitor as visitor_tokens
 from app.services import widget as service
 from app.services.security import utcnow
@@ -97,6 +97,7 @@ async def start_thread(visitor: Visitor, body: SendRequest) -> ThreadDetail:
         now=now,
     )
     await visitor.db.commit()
+    events.message_saved(conversation, message)
 
     return ThreadDetail(
         thread=thread_out(conversation, message.body_text, 0),
@@ -135,6 +136,7 @@ async def send_message(visitor: Visitor, conversation_id: int, body: SendRequest
         now=utcnow(),
     )
     await visitor.db.commit()
+    events.message_saved(conversation, message)
     return message_out(message, {})
 
 

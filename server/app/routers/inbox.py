@@ -17,6 +17,7 @@ from app.schemas.inbox import (
     SnoozeRequest,
     StatusRequest,
 )
+from app.services import events
 from app.services import inbox as service
 from app.services.security import utcnow
 
@@ -136,6 +137,7 @@ async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace
         await service.set_status(signed_in.db, conversation, RESOLVED)
 
     await signed_in.db.commit()
+    events.message_saved(conversation, message)
     return message_out(message, {signed_in.user.id: signed_in.user})
 
 
