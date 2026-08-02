@@ -10,7 +10,8 @@ import { MessageBubble } from "@/components/inbox/message-bubble";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Member, team as teamApi } from "@/lib/auth";
 import { type ConversationDetail, type Message, announceChange, inbox } from "@/lib/inbox";
-import { ARRIVED } from "@/lib/socket";
+import type { LiveEvent } from "@/lib/live";
+import { ARRIVED, PRESENCE } from "@/lib/socket";
 
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,6 +21,8 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   const [pending, setPending] = useState<Message[]>([]);
   const [team, setTeam] = useState<Member[]>([]);
   const [gone, setGone] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [seen, setSeen] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(
@@ -56,6 +59,25 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     window.addEventListener(ARRIVED, arrived);
     return () => window.removeEventListener(ARRIVED, arrived);
   }, [conversationId, load]);
+
+  useEffect(() => {
+    const presence = (event: Event) => {
+      const signal = (event as CustomEvent<LiveEvent>).detail;
+      if (signal.t === "typing" && signal.conversation === conversationId) {
+        setTyping(signal.who === "customer" && signal.on);
+      }
+      if (signal.t === "read" && signal.conversation === conversationId) {
+        setSeen(signal.who === "customer");
+      }
+    };
+    window.addEventListener(PRESENCE, presence);
+    return () => window.removeEventListener(PRESENCE, presence);
+  }, [conversationId]);
+
+  useEffect(() => {
+    setTyping(false);
+    setSeen(false);
+  }, [conversationId]);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: detail === null ? "auto" : "smooth" });
@@ -99,6 +121,15 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
               />
             ))}
           </AnimatePresence>
+
+          {seen && !typing && (
+            <p className="text-right text-xs text-muted-foreground">Seen</p>
+          )}
+          {typing && (
+            <p className="text-xs text-muted-foreground">
+              {detail.conversation.customer.name} is typing…
+            </p>
+          )}
           <div ref={bottom} />
         </div>
 

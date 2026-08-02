@@ -14,6 +14,7 @@ class Claim:
     kind: str
     workspace_id: int
     user_id: int | None = None
+    name: str | None = None
     role: str | None = None
     customer_id: int | None = None
 

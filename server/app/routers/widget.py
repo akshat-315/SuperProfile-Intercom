@@ -81,6 +81,7 @@ async def open_session(request: Request, body: SessionRequest, db: SessionDep) -
 
 @router.post("/ws/ticket", response_model=TicketOut)
 async def chat_ticket(visitor: Visitor) -> TicketOut:
+    ratelimit.enforce(ratelimit.WS_TICKET, str(visitor.customer.id))
     claim = tickets.Claim(
         kind=tickets.VISITOR,
         workspace_id=visitor.workspace_id,
@@ -156,4 +157,5 @@ async def mark_read(visitor: Visitor, conversation_id: int) -> Response:
     conversation = await service.conversation_of(visitor.db, visitor.customer, conversation_id)
     await service.mark_agent_replies_read(visitor.db, conversation, utcnow())
     await visitor.db.commit()
+    events.read_by(conversation, who=events.CUSTOMER)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

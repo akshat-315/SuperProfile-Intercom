@@ -29,6 +29,8 @@ VERIFY_RESEND = Limit(allowed=3, window_seconds=3600, name="verify_resend")
 WIDGET_SESSION = Limit(allowed=20, window_seconds=60, name="widget_session")
 WIDGET_START = Limit(allowed=5, window_seconds=300, name="widget_start")
 WIDGET_SEND = Limit(allowed=30, window_seconds=60, name="widget_send")
+WS_TICKET = Limit(allowed=30, window_seconds=60, name="ws_ticket")
+WS_TYPING = Limit(allowed=5, window_seconds=1, name="ws_typing")
 
 
 class _Buckets:

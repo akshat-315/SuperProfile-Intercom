@@ -98,8 +98,10 @@ async def get_conversation(conversation_id: int, signed_in: InWorkspace) -> Conv
     thread = await service.get_thread(
         signed_in.db, conversation_id, user=signed_in.user, role=signed_in.role or ""
     )
-    await service.mark_read(signed_in.db, thread.conversation, utcnow())
+    cleared = await service.mark_read(signed_in.db, thread.conversation, utcnow())
     await signed_in.db.commit()
+    if cleared:
+        events.read_by(thread.conversation, who=events.AGENT)
 
     return ConversationDetail(
         conversation=row_out(

@@ -1,6 +1,11 @@
 export type LiveEvent =
   | { t: "resync" }
-  | { t: "message"; conversation: number; seq: number };
+  | { t: "message"; conversation: number; seq: number }
+  | { t: "typing"; conversation: number; who: "agent" | "customer"; name: string | null; on: boolean }
+  | { t: "read"; conversation: number; who: "agent" | "customer" }
+  | { t: "error"; code: string };
+
+export const TYPING_IDLE = 3000;
 
 const FIRST_DELAY = 1000;
 const MAX_DELAY = 30000;
@@ -18,12 +23,39 @@ function withJitter(delay: number): number {
   return delay * (1 - JITTER + Math.random() * JITTER * 2);
 }
 
+export type Live = {
+  stop: () => void;
+  send: (frame: object) => void;
+};
+
+export function typingSignal(live: Live, conversation: number) {
+  let on = false;
+  let idle: ReturnType<typeof setTimeout> | null = null;
+
+  function announce(next: boolean) {
+    on = next;
+    live.send({ t: "typing", conversation, on: next });
+  }
+
+  return {
+    keystroke() {
+      if (!on) announce(true);
+      if (idle !== null) clearTimeout(idle);
+      idle = setTimeout(() => announce(false), TYPING_IDLE);
+    },
+    done() {
+      if (idle !== null) clearTimeout(idle);
+      if (on) announce(false);
+    },
+  };
+}
+
 export function keepConnected(
   path: string,
   getTicket: () => Promise<string>,
   onEvent: (event: LiveEvent) => void,
   onFocus?: () => void,
-): () => void {
+): Live {
   let socket: WebSocket | null = null;
   let retry: ReturnType<typeof setTimeout> | null = null;
   let delay = FIRST_DELAY;
@@ -84,11 +116,18 @@ export function keepConnected(
   window.addEventListener("focus", focused);
   void open();
 
-  return () => {
-    stopped = true;
-    window.removeEventListener("focus", focused);
-    if (retry !== null) clearTimeout(retry);
-    socket?.close();
-    socket = null;
+  return {
+    stop() {
+      stopped = true;
+      window.removeEventListener("focus", focused);
+      if (retry !== null) clearTimeout(retry);
+      socket?.close();
+      socket = null;
+    },
+    send(frame: object) {
+      if (socket !== null && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(frame));
+      }
+    },
   };
 }
