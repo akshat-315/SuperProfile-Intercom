@@ -10,6 +10,7 @@ import { MessageBubble } from "@/components/inbox/message-bubble";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Member, team as teamApi } from "@/lib/auth";
 import { type ConversationDetail, type Message, announceChange, inbox } from "@/lib/inbox";
+import { ARRIVED } from "@/lib/socket";
 
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -46,6 +47,15 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
       .catch(() => setTeam([]));
     return () => controller.abort();
   }, [load]);
+
+  useEffect(() => {
+    const arrived = (event: Event) => {
+      const { conversation } = (event as CustomEvent<{ conversation: number }>).detail;
+      if (conversation === conversationId) void load();
+    };
+    window.addEventListener(ARRIVED, arrived);
+    return () => window.removeEventListener(ARRIVED, arrived);
+  }, [conversationId, load]);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: detail === null ? "auto" : "smooth" });
