@@ -31,10 +31,31 @@ Everything below is deployed and clickable, no install required.
 | The demo shop | <https://superprofintercom.aksht.dev/demo/?app=https://superprofintercom.aksht.dev> |
 | The agent inbox | <https://superprofintercom.aksht.dev> |
 | The help centre | <https://superprofintercom.aksht.dev/help/superprofile> |
+| The support email | `superprofile@aksht.dev` |
 
 The demo shop is a stand-in customer website with the chat widget embedded. The agent inbox is the
 app itself, where the resulting conversations land. The help centre is the demo workspace's public
 knowledge base.
+
+### Trying the email side
+
+Send a plain email to `superprofile@aksht.dev` from any mail client and it turns up in the same
+inbox as the chat messages, as a conversation you can reply to. Replies go back out as real email,
+threaded, so the customer answers from their own mail client and never learns there is a support
+tool involved.
+
+The address is not a mailbox anyone reads. Each workspace gets its own random token, and the part
+before the `@` is that token — `superprofile` here — so an incoming message can be traced to
+exactly one workspace before anything else happens. Our mail provider receives the message and
+tells us it has arrived; we fetch the body, check the signature over the raw bytes so nobody can
+forge a delivery, then decide whether it belongs to a conversation we already know about. That
+decision uses the message identifiers that mail clients pass around, never the subject line —
+subjects get edited, translated and reused, and threading on them merges strangers' conversations
+together. If nothing matches, it becomes a new conversation. If the thread was already resolved,
+the customer's reply reopens it.
+
+One thing worth trying: reply to a reply. The quoted text and signature are stripped, so the
+inbox shows what the person actually wrote rather than the whole history pasted again.
 
 Sign in to the demo workspace as any of these; they all share the password `superprofile-demo-2026`.
 

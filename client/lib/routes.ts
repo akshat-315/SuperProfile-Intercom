@@ -9,7 +9,7 @@ export const ROUTES = {
   inbox: "/inbox",
   articles: "/articles",
   team: "/settings/team",
-  workspace: "/settings/workspace",
+  settings: "/settings",
   invite: (code: string) => `/invite/${encodeURIComponent(code)}`,
 } as const;
 

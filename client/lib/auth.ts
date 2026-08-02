@@ -7,6 +7,7 @@ export type Team = components["schemas"]["TeamResponse"];
 export type Member = components["schemas"]["MemberOut"];
 export type Invite = components["schemas"]["InviteOut"];
 export type VerifyResult = components["schemas"]["VerifyResponse"];
+export type Setup = components["schemas"]["SetupOut"];
 
 export const auth = {
   signup: (body: { name: string; email: string; password: string; invite_code?: string }) =>
@@ -21,6 +22,7 @@ export const auth = {
 export const workspaces = {
   create: (name: string) => api.post<Me>("/workspaces", { name }),
   rename: (name: string) => api.patch<Me>("/workspaces/current", { name }),
+  setup: () => api.get<Setup>("/workspaces/setup"),
 };
 
 export const invites = {
