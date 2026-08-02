@@ -21,11 +21,12 @@ from app.services.security import utcnow
 router = APIRouter(prefix="/api/widget", tags=["widget"])
 
 
-def thread_out(conversation: Conversation, preview: str, unread: int) -> ThreadOut:
+def thread_out(conversation: Conversation, opening: str, unread: int) -> ThreadOut:
     return ThreadOut(
         id=conversation.id,
         status=conversation.status,
-        preview=preview,
+        title=conversation.subject or opening[: service.TITLE_LENGTH] or "New conversation",
+        preview=conversation.last_message_preview or opening,
         unread=unread,
         last_at=conversation.last_message_at,
     )
@@ -81,7 +82,7 @@ async def open_session(request: Request, body: SessionRequest, db: SessionDep) -
 async def list_threads(visitor: Visitor) -> ThreadList:
     rows = await service.conversations_for(visitor.db, visitor.customer)
     return ThreadList(
-        items=[thread_out(conversation, preview, unread) for conversation, preview, unread in rows]
+        items=[thread_out(row.conversation, row.opening, row.unread) for row in rows]
     )
 
 
@@ -102,7 +103,7 @@ async def start_thread(visitor: Visitor, body: SendRequest) -> ThreadDetail:
     await visitor.db.commit()
 
     return ThreadDetail(
-        thread=thread_out(conversation, message.body_text[:200], 0),
+        thread=thread_out(conversation, message.body_text, 0),
         messages=[message_out(message, {})],
     )
 
@@ -117,9 +118,10 @@ async def read_thread(
     messages = await service.messages_of(visitor.db, conversation, after_seq=after_seq)
     authors = await service.authors_of(visitor.db, messages)
     unread = await service.unread_for(visitor.db, conversation)
+    opening = await service.opening_of(visitor.db, conversation)
 
     return ThreadDetail(
-        thread=thread_out(conversation, conversation.last_message_preview or "", unread),
+        thread=thread_out(conversation, opening, unread),
         messages=[message_out(message, authors) for message in messages],
     )
 

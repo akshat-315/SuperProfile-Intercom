@@ -29,6 +29,7 @@ class SessionOut(BaseModel):
 class ThreadOut(BaseModel):
     id: int
     status: str
+    title: str
     preview: str
     unread: int
     last_at: datetime

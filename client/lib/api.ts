@@ -14,7 +14,7 @@ export class ApiError extends Error {
 
 const FALLBACK = "Something went wrong. Please try again.";
 
-async function toError(response: Response): Promise<ApiError> {
+export async function toError(response: Response): Promise<ApiError> {
   const fallback = {
     code: `http_${response.status}`,
     message: FALLBACK,
