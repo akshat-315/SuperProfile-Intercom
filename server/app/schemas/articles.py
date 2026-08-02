@@ -44,6 +44,7 @@ class Suggestion(BaseModel):
     id: int
     title: str
     slug: str
+    url: str
     score: float
 
 

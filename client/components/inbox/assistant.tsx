@@ -147,12 +147,15 @@ export function Assistant({ conversationId }: { conversationId: number }) {
           {busy ? "Looking…" : "Suggest articles"}
         </Button>
 
-        {suggested !== null && <Results items={suggested} />}
+        {found === null && suggested !== null && <Results items={suggested} />}
 
         <div className="flex gap-1.5 pt-1">
           <Input
             value={term}
-            onChange={(e) => setTerm(e.target.value)}
+            onChange={(e) => {
+              setTerm(e.target.value);
+              if (!e.target.value.trim()) setFound(null);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();

@@ -10,7 +10,7 @@ export function CustomerRail({ row }: { row: ConversationRow }) {
   const since = new Date(row.last_message_at);
 
   return (
-    <aside className="hidden w-[280px] shrink-0 border-l p-4 xl:block">
+    <aside className="hidden h-svh w-[280px] shrink-0 overflow-y-auto border-l p-4 xl:block">
       <div className="flex items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-full bg-muted">
           <User className="size-5 text-muted-foreground" aria-hidden />
