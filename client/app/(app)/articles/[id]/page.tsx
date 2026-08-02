@@ -8,13 +8,11 @@ import { toast } from "sonner";
 
 import { ArticleEditor } from "@/components/articles/editor";
 import { SubmitButton } from "@/components/submit-button";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { type Article, articles } from "@/lib/articles";
+import { cn } from "@/lib/utils";
 
 export default function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -84,57 +82,67 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 p-8">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-72 w-full" />
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-8" aria-hidden>
+        <div className="skeleton-sweep h-7 w-64 rounded-lg" />
+        <div className="skeleton-sweep h-72 w-full rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 p-8">
-      <div className="flex items-center gap-3">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-8">
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" asChild aria-label="Back to articles">
           <Link href="/articles">
             <ArrowLeft className="size-4" aria-hidden />
           </Link>
         </Button>
-        <h1 className="flex-1 text-lg font-medium">
+        <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-[-0.02em]">
           {fresh ? "New article" : "Edit article"}
         </h1>
         {article && (
-          <Badge variant={article.status === "published" ? "default" : "secondary"}>
-            {article.status}
-          </Badge>
+          <span
+            className={cn(
+              "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[11px] font-semibold",
+              article.status === "published" ? "bg-done-bg text-done" : "bg-secondary text-ink-500",
+            )}
+          >
+            {article.status === "published" ? "Published" : "Draft"}
+          </span>
         )}
       </div>
 
+      {/* A borderless 26px title field, so writing feels like writing rather
+          than filling in a form. */}
       <div className="space-y-1.5">
-        <Label htmlFor="title">Title</Label>
-        <Input
+        <Label htmlFor="title" className="sr-only">
+          Title
+        </Label>
+        <input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Do Kestrel boots run true to size?"
+          className="w-full border-0 bg-transparent text-[26px] leading-tight font-semibold tracking-[-0.03em] outline-none placeholder:text-ink-400 focus-visible:outline-none"
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>Article</Label>
+        <Label className="sr-only">Article</Label>
         <ArticleEditor value={html} onChange={setHtml} />
       </div>
 
-      <div className="flex items-center gap-2">
-        <SubmitButton busy={busy} onClick={save}>
+      <div className="flex flex-wrap items-center gap-2">
+        <SubmitButton busy={busy} onClick={save} size="lg">
           Save
         </SubmitButton>
         {article && (
-          <Button variant="outline" disabled={busy} onClick={togglePublished}>
+          <Button variant="outline" size="lg" disabled={busy} onClick={togglePublished}>
             {article.status === "published" ? "Move back to draft" : "Publish"}
           </Button>
         )}
         {article?.status === "published" && (
-          <span className="text-xs text-muted-foreground">
+          <span className="min-w-0 truncate text-xs text-ink-500">
             Live at /help/…/{article.slug}
           </span>
         )}

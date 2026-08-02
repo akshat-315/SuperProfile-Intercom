@@ -1,8 +1,9 @@
-import { Search } from "lucide-react";
+import { FileText, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BrandMark } from "@/components/brand-mark";
 import { type ArticleCard, fetchResults, fetchSite } from "@/lib/help";
 
 type Props = {
@@ -20,16 +21,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function Card({ workspace, article }: { workspace: string; article: ArticleCard }) {
+/**
+ * Rows with hairlines rather than cards. Twelve bordered boxes stacked
+ * vertically is twelve competing rectangles; rows scan faster and let the
+ * category headings do the grouping.
+ */
+function ArticleLink({ workspace, article }: { workspace: string; article: ArticleCard }) {
   return (
     <Link
       href={`/help/${workspace}/${article.slug}`}
-      className="block rounded-lg border p-4 transition-colors hover:bg-muted/50"
+      className="flex items-start gap-3 border-b border-line py-3.5 transition-colors last:border-b-0 hover:bg-brand-50/60"
     >
-      <p className="font-medium">{article.title}</p>
-      {article.preview && (
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{article.preview}</p>
-      )}
+      <FileText className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden />
+      <span className="min-w-0">
+        <span className="block text-sm font-medium">{article.title}</span>
+        {article.preview && (
+          <span className="mt-0.5 block line-clamp-2 text-[12.5px] leading-relaxed text-ink-500">
+            {article.preview}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
@@ -54,69 +65,80 @@ export default async function HelpCentre({ params, searchParams }: Props) {
   const loose = shown.filter((a) => a.category_id === null);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <header className="mb-10 space-y-4">
-        <p className="text-sm text-muted-foreground">{site.workspace_name}</p>
-        <h1 className="text-3xl font-semibold tracking-tight">How can we help?</h1>
+    <main className="min-h-svh bg-paper">
+      {/* The only surface a stranger sees, so it is the one place allowed to be
+          generous with space — and the one that needed a real masthead. */}
+      <header className="border-b border-line bg-linear-to-b from-brand-50 to-paper">
+        <div className="mx-auto max-w-[720px] px-5 py-10 sm:px-6 sm:py-14">
+          <p className="mb-3.5 flex items-center gap-2.5 text-[13px] font-semibold text-brand-700">
+            <BrandMark className="size-5 text-brand-500" />
+            {site.workspace_name}
+          </p>
+          <h1 className="mb-4 text-[clamp(1.5rem,6vw,1.7rem)] leading-tight font-bold tracking-[-0.032em] text-brand-900">
+            How can we help?
+          </h1>
 
-        <form action={`/help/${workspace}`} className="relative">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            type="search"
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Search for an answer…"
-            aria-label="Search help articles"
-            className="h-11 w-full rounded-full border bg-background pl-10 pr-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </form>
+          <form action={`/help/${workspace}`} className="relative max-w-[520px]">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-5 size-4 -translate-y-1/2 text-ink-400"
+              aria-hidden
+            />
+            <input
+              type="search"
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="Search for an answer…"
+              aria-label="Search help articles"
+              className="h-[46px] w-full rounded-full border border-line-input bg-surface pr-5 pl-12 text-[14.5px] shadow-e1 outline-none placeholder:text-ink-400 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </form>
+        </div>
       </header>
 
-      {searching && (
-        <p className="mb-6 text-sm text-muted-foreground">
-          {shown.length === 0
-            ? `Nothing found for “${q}”.`
-            : `${shown.length} result${shown.length === 1 ? "" : "s"} for “${q}”.`}
-        </p>
-      )}
-
-      {!searching && site.articles.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          There are no published articles here yet.
-        </p>
-      )}
-
-      <div className="space-y-10">
-        {grouped.map(({ category, articles }) => (
-          <section key={category.id} className="space-y-3">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              {category.name}
-            </h2>
-            <div className="space-y-2">
-              {articles.map((article) => (
-                <Card key={article.slug} workspace={workspace} article={article} />
-              ))}
-            </div>
-          </section>
-        ))}
-
-        {loose.length > 0 && (
-          <section className="space-y-3">
-            {grouped.length > 0 && (
-              <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                Everything else
-              </h2>
-            )}
-            <div className="space-y-2">
-              {loose.map((article) => (
-                <Card key={article.slug} workspace={workspace} article={article} />
-              ))}
-            </div>
-          </section>
+      <div className="mx-auto max-w-[720px] px-5 py-8 sm:px-6 sm:py-10">
+        {searching && (
+          <p className="mb-6 text-sm text-ink-500">
+            {shown.length === 0
+              ? `Nothing found for “${q}”.`
+              : `${shown.length} result${shown.length === 1 ? "" : "s"} for “${q}”.`}
+          </p>
         )}
+
+        {!searching && site.articles.length === 0 && (
+          <p className="text-sm text-ink-500">There are no published articles here yet.</p>
+        )}
+
+        <div className="space-y-9">
+          {grouped.map(({ category, articles }) => (
+            <section key={category.id}>
+              <h2 className="mb-2.5 flex items-center gap-3 text-[11px] font-semibold tracking-[0.07em] text-ink-500 uppercase">
+                {category.name}
+                <span className="h-px flex-1 bg-line" />
+              </h2>
+              <div>
+                {articles.map((article) => (
+                  <ArticleLink key={article.slug} workspace={workspace} article={article} />
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {loose.length > 0 && (
+            <section>
+              {grouped.length > 0 && (
+                <h2 className="mb-2.5 flex items-center gap-3 text-[11px] font-semibold tracking-[0.07em] text-ink-500 uppercase">
+                  Everything else
+                  <span className="h-px flex-1 bg-line" />
+                </h2>
+              )}
+              <div>
+                {loose.map((article) => (
+                  <ArticleLink key={article.slug} workspace={workspace} article={article} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
     </main>
   );

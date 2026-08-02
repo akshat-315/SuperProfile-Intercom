@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, TriangleAlert, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -249,41 +249,58 @@ function Panel() {
 
   return (
     <>
-      <header className="flex items-center gap-2 border-b px-3 py-3">
+      {/* The one surface where a saturated violet field is right: this is a
+          handshake on someone else's page, and it has to look like it belongs
+          to the workspace within about 200 milliseconds. It carries the
+          workspace's name, never the desk's — infrastructure does not sign its
+          work on the customer's page. */}
+      <header className="relative flex shrink-0 items-center gap-2 overflow-hidden bg-brand-500 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3.5 text-white">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-14 -right-10 size-38 rounded-full bg-white/8"
+        />
         {canGoBack ? (
-          <Button variant="ghost" size="icon" onClick={toList} aria-label="Back">
-            <ArrowLeft className="size-4" aria-hidden />
-          </Button>
+          <button
+            type="button"
+            onClick={toList}
+            aria-label="Back"
+            className="relative grid size-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/15"
+          >
+            <ArrowLeft className="size-4.5" aria-hidden />
+          </button>
         ) : (
-          <div className="w-2" />
+          <div className="w-1.5" />
         )}
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{title}</p>
-          <p className="truncate text-xs text-muted-foreground">
+        <div className="relative min-w-0 flex-1">
+          <p className="truncate text-base font-semibold">{title}</p>
+          <p className="truncate text-[12.5px] text-white/80">
             {view.at === "thread" ? "We usually reply in a few minutes" : "Ask us anything"}
           </p>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          type="button"
           onClick={() => window.parent.postMessage({ type: "close" }, "*")}
           aria-label="Close chat"
+          className="relative grid size-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/15"
         >
-          <X className="size-4" aria-hidden />
-        </Button>
+          <X className="size-4.5" aria-hidden />
+        </button>
       </header>
 
       {view.at === "loading" && (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="flex flex-1 flex-col gap-3 bg-paper p-4" aria-hidden>
+          <div className="skeleton-sweep h-11 w-3/5 rounded-[14px]" />
+          <div className="skeleton-sweep ml-auto h-14 w-2/3 rounded-[14px]" />
+          <div className="skeleton-sweep h-11 w-1/2 rounded-[14px]" />
         </div>
       )}
 
       {view.at === "broken" && (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <p className="text-center text-sm text-muted-foreground">{view.why}</p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 bg-paper p-6 text-center">
+          <TriangleAlert className="size-9 text-stop" strokeWidth={1.5} aria-hidden />
+          <p className="max-w-[32ch] text-sm text-ink-500">{view.why}</p>
         </div>
       )}
 
@@ -305,14 +322,17 @@ function Panel() {
 
       {view.at === "list" && (
         <>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-paper">
             {threads.map((thread) => (
               <ThreadSummary key={thread.id} thread={thread} onOpen={() => void open(thread.id)} />
             ))}
           </div>
-          <div className="border-t p-3">
+          {/* Inset with 16px of margin, not a full-bleed bar pinned to the
+              bottom edge — a full-bleed bar reads as an OS control. */}
+          <div className="shrink-0 border-t bg-surface px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Button
-              className="w-full"
+              variant="outline"
+              className="h-11 w-full rounded-[10px] border-brand-200 bg-brand-50 text-sm font-semibold text-brand-700 hover:bg-brand-100"
               onClick={() => {
                 setMessages([]);
                 setView({ at: "new" });

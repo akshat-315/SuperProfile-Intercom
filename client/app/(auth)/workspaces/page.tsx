@@ -44,9 +44,9 @@ export default function WorkspacesPage() {
   }, [loading, me, router]);
 
   return (
-    <Card>
+    <Card className="border border-line shadow-e2 ring-0 [--card-spacing:--spacing(6)]">
       <CardHeader>
-        <CardTitle>Choose a workspace</CardTitle>
+        <CardTitle className="text-xl font-semibold tracking-[-0.024em]">Choose a workspace</CardTitle>
         <CardDescription>You belong to more than one.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -65,7 +65,7 @@ export default function WorkspacesPage() {
               onClick={() => choose(membership.workspace.id)}
             >
               <span className="font-medium">{membership.workspace.name}</span>
-              <span className="text-xs text-muted-foreground">{membership.role}</span>
+              <span className="text-xs text-ink-500">{membership.role}</span>
             </Button>
           </motion.div>
         ))}
