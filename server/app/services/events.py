@@ -8,6 +8,7 @@ MESSAGE = "message"
 RESYNC = "resync"
 TYPING = "typing"
 READ = "read"
+SUMMARY = "summary"
 ERROR = "error"
 
 AGENT = "agent"
@@ -32,6 +33,10 @@ def typing_changed(conversation: Conversation, *, who: str, name: str | None, on
         _to_visitor(conversation, payload)
     else:
         _to_agents(conversation, payload)
+
+
+def summary_ready(conversation: Conversation) -> None:
+    _to_agents(conversation, {"t": SUMMARY, "conversation": conversation.id})
 
 
 def read_by(conversation: Conversation, *, who: str) -> None:

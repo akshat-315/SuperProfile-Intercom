@@ -29,7 +29,7 @@ export function connectInbox(): () => void {
       announceChange();
       return;
     }
-    if (event.t === "typing" || event.t === "read") {
+    if (event.t === "typing" || event.t === "read" || event.t === "summary") {
       window.dispatchEvent(new CustomEvent(PRESENCE, { detail: event }));
       return;
     }
