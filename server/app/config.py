@@ -1,5 +1,6 @@
 import secrets
 from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +27,11 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def app_origin(self) -> str:
+        parsed = urlsplit(self.app_url)
+        return f"{parsed.scheme}://{parsed.netloc}".lower()
 
     @property
     def cookie_secure(self) -> bool:
