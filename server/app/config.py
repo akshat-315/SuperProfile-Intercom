@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     session_secret: str = ""
     app_url: str = "http://localhost:3000"
 
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_deployment: str = ""
+    azure_openai_api_version: str = "2024-10-21"
+
     resend_api_key: str = ""
     resend_webhook_secret: str = ""
     email_domain: str = "aksht.dev"
@@ -50,6 +55,26 @@ class Settings(BaseSettings):
     @property
     def expose_dev_links(self) -> bool:
         return not self.is_production
+
+    @property
+    def summaries_configured(self) -> bool:
+        return bool(
+            self.azure_openai_endpoint
+            and self.azure_openai_api_key
+            and self.azure_openai_deployment
+        )
+
+    @property
+    def azure_host(self) -> str:
+        parsed = urlsplit(self.azure_openai_endpoint)
+        return f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else ""
+
+    @property
+    def azure_chat_url(self) -> str:
+        return (
+            f"{self.azure_host}/openai/deployments/{self.azure_openai_deployment}"
+            f"/chat/completions?api-version={self.azure_openai_api_version}"
+        )
 
     @property
     def inbound_configured(self) -> bool:

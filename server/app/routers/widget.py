@@ -14,7 +14,7 @@ from app.schemas.widget import (
     VisitorOut,
 )
 from app.schemas.ws import TicketOut
-from app.services import events, ratelimit, tickets
+from app.services import events, ratelimit, summaries, tickets
 from app.services import visitor as visitor_tokens
 from app.services import widget as service
 from app.services.security import utcnow
@@ -147,6 +147,7 @@ async def send_message(visitor: Visitor, conversation_id: int, body: SendRequest
         client_msg_id=body.client_msg_id,
         now=utcnow(),
     )
+    await summaries.schedule(visitor.db, conversation)
     await visitor.db.commit()
     events.message_saved(conversation, message)
     return message_out(message, {})

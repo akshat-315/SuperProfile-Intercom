@@ -9,12 +9,21 @@ from app.schemas.articles import (
     ArticleRow,
     CategoryOut,
     CategoryRequest,
+    Suggestion,
+    SuggestionList,
 )
 from app.services import articles as service
+from app.services import ratelimit
 from app.services.html import clean, plain, to_text
 from app.services.security import utcnow
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
+
+PICKER_RESULTS = 8
+
+
+def suggestion_out(article: Article, score: float) -> Suggestion:
+    return Suggestion(id=article.id, title=article.title, slug=article.slug, score=score)
 
 
 def row_out(article: Article) -> ArticleRow:
@@ -56,6 +65,15 @@ async def add_category(body: CategoryRequest, signed_in: InWorkspace) -> Categor
     )
     await signed_in.db.commit()
     return category_out(category)
+
+
+@router.get("/search", response_model=SuggestionList)
+async def find_articles(
+    signed_in: InWorkspace, q: str = Query(default="", max_length=300)
+) -> SuggestionList:
+    ratelimit.enforce(ratelimit.ARTICLE_SEARCH, str(signed_in.user.id))
+    found = await service.search(signed_in.db, q, limit=PICKER_RESULTS)
+    return SuggestionList(items=[suggestion_out(a, score) for a, score in found])
 
 
 @router.get("", response_model=ArticleList)

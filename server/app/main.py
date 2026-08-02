@@ -24,7 +24,7 @@ from app.routers import (
     workspaces,
     ws,
 )
-from app.services import ingest, jobs, outbox  # noqa: F401  handlers register on import
+from app.services import ingest, jobs, outbox, summaries  # noqa: F401  handlers register on import
 
 log = get_logger(__name__)
 

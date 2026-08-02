@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query, status
 from app.deps import InWorkspace
 from app.errors import AppError
 from app.models import EMAIL, RESOLVED, STATUSES, Conversation, Message, User
+from app.schemas.articles import Suggestion, SuggestionList
 from app.schemas.inbox import (
     AssigneeOut,
     AssignRequest,
@@ -17,7 +18,8 @@ from app.schemas.inbox import (
     SnoozeRequest,
     StatusRequest,
 )
-from app.services import events, outbox
+from app.services import articles as help_articles
+from app.services import events, outbox, ratelimit, summaries
 from app.services import inbox as service
 from app.services.security import utcnow
 
@@ -99,6 +101,7 @@ async def get_conversation(conversation_id: int, signed_in: InWorkspace) -> Conv
         signed_in.db, conversation_id, user=signed_in.user, role=signed_in.role or ""
     )
     cleared = await service.mark_read(signed_in.db, thread.conversation, utcnow())
+    await summaries.schedule(signed_in.db, thread.conversation, soon=True)
     await signed_in.db.commit()
     if cleared:
         events.read_by(thread.conversation, who=events.AGENT)
@@ -114,6 +117,16 @@ async def get_conversation(conversation_id: int, signed_in: InWorkspace) -> Conv
             )
         ),
         messages=[message_out(m, thread.authors) for m in thread.messages],
+    )
+
+
+@router.get("/{conversation_id}/suggestions", response_model=SuggestionList)
+async def suggestions(conversation_id: int, signed_in: InWorkspace) -> SuggestionList:
+    ratelimit.enforce(ratelimit.SUGGEST, str(signed_in.user.id))
+    conversation = await _mine(signed_in, conversation_id)
+    found = await help_articles.suggest(signed_in.db, conversation.id)
+    return SuggestionList(
+        items=[Suggestion(id=a.id, title=a.title, slug=a.slug, score=score) for a, score in found]
     )
 
 
@@ -144,6 +157,7 @@ async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace
     elif body.resolve:
         await service.set_status(signed_in.db, conversation, RESOLVED)
 
+    await summaries.schedule(signed_in.db, conversation)
     await signed_in.db.commit()
     events.message_saved(conversation, message)
     return message_out(message, {signed_in.user.id: signed_in.user})

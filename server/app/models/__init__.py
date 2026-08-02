@@ -18,6 +18,7 @@ from app.models.conversation import (
     Conversation,
     Status,
 )
+from app.models.conversation_state import KEYWORDS, SUMMARY_FIELDS, ConversationState
 from app.models.customer import Customer
 from app.models.invite import Invite
 from app.models.job import DONE, FAILED, JOB_STATUSES, PENDING, Job, JobStatus
@@ -26,6 +27,9 @@ from app.models.user import EmailVerification, User, touch_last_seen
 from app.models.workspace import ADMIN, AGENT, ROLES, Role, Workspace, WorkspaceMember
 
 __all__ = [
+    "KEYWORDS",
+    "SUMMARY_FIELDS",
+    "ConversationState",
     "ARTICLE_STATUSES",
     "DRAFT",
     "PUBLISHED",
