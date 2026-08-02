@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     def expose_dev_links(self) -> bool:
         return not self.is_production
 
+    @property
+    def inbound_configured(self) -> bool:
+        return bool(self.resend_webhook_secret and self.inbound_domain)
+
+    def inbound_address(self, token: str) -> str:
+        return f"{token}@{self.inbound_domain}"
+
     @model_validator(mode="after")
     def _check_session_secret(self) -> Self:
         if self.is_production and len(self.session_secret) < 32:
