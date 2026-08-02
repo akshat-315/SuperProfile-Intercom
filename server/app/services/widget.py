@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,8 +15,10 @@ from app.models import (
     Conversation,
     Customer,
     Message,
+    User,
     Workspace,
 )
+from app.services import inbox
 from app.services.security import new_visitor_id
 from app.workspace_filter import all_workspaces, require_workspace_id, use_workspace
 
@@ -210,3 +213,75 @@ def reopen(conversation: Conversation) -> None:
     if conversation.status == RESOLVED:
         conversation.status = OPEN
     conversation.snoozed_until = None
+
+
+async def start_with_message(
+    db: AsyncSession,
+    customer: Customer,
+    *,
+    body: str,
+    client_msg_id: UUID | None,
+    now: datetime,
+) -> tuple[Conversation, Message]:
+    conversation = await start_conversation(db, customer, now=now)
+    message = await inbox.add_message(
+        db,
+        conversation,
+        direction=INBOUND,
+        author_user_id=None,
+        body=body,
+        client_msg_id=client_msg_id,
+        now=now,
+    )
+    return conversation, message
+
+
+async def send(
+    db: AsyncSession,
+    conversation: Conversation,
+    *,
+    body: str,
+    client_msg_id: UUID | None,
+    now: datetime,
+) -> Message:
+    if client_msg_id is not None:
+        existing = await db.scalar(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.client_msg_id == client_msg_id,
+            )
+        )
+        if existing is not None:
+            return existing
+
+    reopen(conversation)
+    return await inbox.add_message(
+        db,
+        conversation,
+        direction=INBOUND,
+        author_user_id=None,
+        body=body,
+        client_msg_id=client_msg_id,
+        now=now,
+    )
+
+
+async def unread_for(db: AsyncSession, conversation: Conversation) -> int:
+    return (
+        await db.scalar(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conversation.id,
+                Message.direction != INBOUND,
+                Message.read_at.is_(None),
+            )
+        )
+    ) or 0
+
+
+async def authors_of(db: AsyncSession, messages: list[Message]) -> dict[int, str]:
+    ids = {m.author_user_id for m in messages if m.author_user_id is not None}
+    if not ids:
+        return {}
+    with all_workspaces(reason="a message author is a person, looked up by id"):
+        rows = await db.scalars(select(User).where(User.id.in_(ids)))
+    return {row.id: row.name for row in rows}
