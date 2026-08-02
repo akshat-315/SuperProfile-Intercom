@@ -15,7 +15,7 @@ NOT_FOUND = "That article could not be found."
 CATEGORY_NOT_FOUND = "That category could not be found."
 TERM = re.compile(r"[a-z0-9]{2,}")
 MAX_TERMS = 40
-FLOOR = 0.05
+FLOOR = 1.0
 SUGGESTIONS = 3
 RECENT_CUSTOMER_MESSAGES = 5
 
@@ -128,7 +128,8 @@ async def update(
 ) -> Article:
     if title is not None and title.strip() != article.title:
         article.title = title.strip()
-        article.slug = await free_slug(db, Article, title, ignoring=article.id)
+        if article.published_at is None:
+            article.slug = await free_slug(db, Article, title, ignoring=article.id)
     if body_html is not None:
         article.body_html = body_html
     if body_text is not None:

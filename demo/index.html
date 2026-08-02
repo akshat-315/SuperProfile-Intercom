@@ -3,16 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Touchline — football kit</title>
+<title>SuperProfile — sell what you know</title>
 <style>
   :root {
-    --ink: #14171a;
-    --muted: #6b7280;
-    --line: #e7e5e1;
-    --paper: #fbfaf8;
-    --pitch: #0b6b3a;
+    --ink: #17141f;
+    --muted: #6a6577;
+    --line: #e8e4ef;
+    --paper: #fbfaff;
+    --violet: #6d3ee0;
+    --violet-soft: #f2edff;
   }
   * { box-sizing: border-box; }
+  html, body { max-width: 100%; overflow-x: hidden; }
   body {
     margin: 0;
     background: var(--paper);
@@ -23,49 +25,102 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     padding: 18px 32px;
     border-bottom: 1px solid var(--line);
     background: #fff;
     position: sticky;
     top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
   }
-  .brand { font-weight: 700; letter-spacing: .14em; font-size: 15px; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 17px;
+  }
+  .mark {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    background: var(--violet);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  nav { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; }
   nav a {
     color: var(--muted);
     text-decoration: none;
-    margin-left: 26px;
     font-size: 14px;
   }
   nav a:hover { color: var(--ink); }
-  .hero {
-    padding: 84px 32px;
-    max-width: 1120px;
-    margin: 0 auto;
+  nav a.signup {
+    color: #fff;
+    background: var(--ink);
+    padding: 8px 16px;
+    border-radius: 999px;
+  }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+  .hero { padding: 88px 32px 64px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow {
+    display: inline-block;
+    background: var(--violet-soft);
+    color: var(--violet);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 20px;
   }
   .hero h1 {
     font-size: clamp(34px, 5vw, 58px);
     line-height: 1.04;
-    letter-spacing: -0.03em;
-    margin: 0 0 14px;
-    max-width: 14ch;
+    letter-spacing: -0.035em;
+    margin: 0 0 16px;
+    max-width: 15ch;
   }
-  .hero p { color: var(--muted); margin: 0 0 26px; }
+  .hero p {
+    color: var(--muted);
+    margin: 0 0 28px;
+    max-width: 54ch;
+    font-size: 17px;
+  }
+  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
   .cta {
     display: inline-block;
-    background: var(--ink);
+    background: var(--violet);
     color: #fff;
-    padding: 12px 22px;
+    padding: 12px 24px;
     border-radius: 999px;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
   }
+  .cta:hover { background: #5c2fce; }
+  .cta-note { color: var(--muted); font-size: 13px; }
+
+  .section-head { padding: 0 32px 22px; max-width: 1120px; margin: 0 auto; }
+  .section-head h2 {
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .section-head p { color: var(--muted); margin: 0; font-size: 15px; }
+
   .grid {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 0 32px 96px;
+    padding: 0 32px 88px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
   }
   .card {
@@ -73,23 +128,88 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     overflow: hidden;
+    min-width: 0;
   }
   .shot {
-    height: 168px;
+    height: 132px;
     display: grid;
     place-items: center;
-    font-size: 56px;
+    font-size: 48px;
   }
   .body { padding: 14px 16px 18px; }
-  .name { font-size: 15px; margin: 0 0 2px; }
-  .price { color: var(--muted); font-size: 14px; margin: 0; }
+  .name { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .desc { color: var(--muted); font-size: 14px; margin: 0; }
+
+  .payments {
+    background: #fff;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 64px 0;
+  }
+  .pay-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 40px;
+    align-items: start;
+  }
+  .pay-inner > div { min-width: 0; }
+  .pay-inner h2 { font-size: 24px; letter-spacing: -0.02em; margin: 0 0 10px; }
+  .pay-inner p { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .payout {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    background: var(--violet-soft);
+  }
+  .payout .big {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    color: var(--violet);
+  }
+  .payout p { color: var(--muted); font-size: 14px; margin: 0; }
+
+  .proof {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 64px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 28px;
+    text-align: center;
+  }
+  .proof > div { min-width: 0; }
+  .stat { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 2px; }
+  .stat-label { color: var(--muted); font-size: 14px; margin: 0; }
+
   footer {
     border-top: 1px solid var(--line);
-    padding: 28px 32px 140px;
+    padding: 30px 32px 150px;
     color: var(--muted);
     font-size: 13px;
     text-align: center;
+    background: #fff;
   }
+  footer nav {
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 14px;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
 
   #demo-controls {
     position: fixed;
@@ -101,8 +221,10 @@
     border-radius: 12px;
     padding: 14px;
     width: 288px;
+    max-width: calc(100vw - 36px);
     font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
     box-shadow: 0 12px 32px rgba(0,0,0,.28);
+    opacity: .92;
   }
   #demo-controls .title {
     text-transform: uppercase;
@@ -139,58 +261,130 @@
     font-weight: 400;
     text-decoration: underline;
   }
-  #demo-controls .loaded { display: flex; align-items: center; gap: 10px; }
+  #demo-controls .loaded { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   #demo-controls .key { color: #7fd6a2; }
   #demo-controls .hint { color: #8b8f98; margin-top: 8px; }
+
+  @media (max-width: 640px) {
+    header { padding: 14px 20px; }
+    .hero { padding: 56px 20px 44px; }
+    .wrap, .grid, .section-head, .pay-inner, .proof { padding-left: 20px; padding-right: 20px; }
+    footer { padding: 26px 20px 150px; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <span class="brand">TOUCHLINE</span>
+  <span class="brand"><span class="mark">S</span>SuperProfile</span>
   <nav>
-    <a href="#">Boots</a>
-    <a href="#">Balls</a>
-    <a href="#">Kit</a>
-    <a href="#">Teamwear</a>
+    <a href="#products">Products</a>
+    <a href="#payments">Payments</a>
+    <a href="#">Pricing</a>
+    <a href="#">Creators</a>
+    <a class="signup" href="#">Start free</a>
   </nav>
 </header>
 
 <section class="hero">
-  <h1>Boots that hold the ground.</h1>
-  <p>Free returns for 60 days. Next-day delivery on everything in stock.</p>
-  <a class="cta" href="#">Shop the range</a>
+  <span class="eyebrow">By Cosmofeed</span>
+  <h1>Your link in bio, and your whole store.</h1>
+  <p>
+    One page for everything you sell — guides, courses, webinars, calls and
+    memberships. Take payments by card, UPI or wallet, and get paid into your
+    Indian bank the next working day.
+  </p>
+  <div class="cta-row">
+    <a class="cta" href="#">Create your SuperProfile</a>
+    <span class="cta-note">Free to start. No monthly fee.</span>
+  </div>
 </section>
 
-<section class="grid" id="products"></section>
+<div class="section-head" id="products">
+  <h2>Six ways to earn from what you know</h2>
+  <p>Add any of these to your page in a few minutes. Mix as many as you like.</p>
+</div>
 
-<footer>Touchline is a pretend shop. It exists to try the chat widget on.</footer>
+<section class="grid" id="offerings"></section>
+
+<section class="payments" id="payments">
+  <div class="pay-inner">
+    <div>
+      <h2>Built for how India pays</h2>
+      <p>
+        Your buyers checkout with whatever they already use. No redirects to a
+        payment page that looks like someone else's brand.
+      </p>
+      <div class="chips">
+        <span class="chip">UPI</span>
+        <span class="chip">Cards</span>
+        <span class="chip">Wallets</span>
+        <span class="chip">Netbanking</span>
+      </div>
+    </div>
+    <div class="payout">
+      <p class="big">T+1</p>
+      <p>
+        Payouts land in your Indian bank account the next working day after a
+        sale settles. Track every rupee in the analytics dashboard.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="proof">
+  <div>
+    <p class="stat">38,000+</p>
+    <p class="stat-label">creators selling on SuperProfile</p>
+  </div>
+  <div>
+    <p class="stat">4M+</p>
+    <p class="stat-label">people who have visited a creator's page</p>
+  </div>
+  <div>
+    <p class="stat">T+1</p>
+    <p class="stat-label">payouts, every working day</p>
+  </div>
+</section>
+
+<footer>
+  <nav>
+    <a href="#">About</a>
+    <a href="#">Pricing</a>
+    <a href="#">Blog</a>
+    <a id="help-link" href="#">Help</a>
+    <a href="#">Terms</a>
+  </nav>
+  <div>SuperProfile is a demo stand-in. It exists to try the chat widget on.</div>
+</footer>
 
 <div id="demo-controls"></div>
 
 <script>
-  const PRODUCTS = [
-    { emoji: "⚽",  name: "Pro Match Ball",      price: "£34.99", tint: "#eef4ff" },
-    { emoji: "👟",  name: "Kestrel FG Boots",    price: "£189.99", tint: "#fff1e8" },
-    { emoji: "👕",  name: "Home Jersey 25/26",   price: "£74.99", tint: "#eafaf0" },
-    { emoji: "🧤",  name: "Keeper Gloves",       price: "£54.99", tint: "#f4eefe" },
-    { emoji: "🧦",  name: "Grip Socks",          price: "£14.99", tint: "#fdf3f3" },
-    { emoji: "🎽",  name: "Training Bib",        price: "£19.99", tint: "#f2f6f2" },
+  const OFFERINGS = [
+    { emoji: "📘", name: "Digital products",     desc: "Guides, templates and packs, delivered the moment they pay.", tint: "#f2edff" },
+    { emoji: "🎓", name: "Online courses",       desc: "Lessons, modules and drip content, hosted for you.",          tint: "#eef4ff" },
+    { emoji: "🎥", name: "Paid webinars",        desc: "Sell seats to a live session and handle the joining links.",  tint: "#eafaf0" },
+    { emoji: "📞", name: "1:1 coaching calls",   desc: "Share your calendar, take the booking and the payment.",      tint: "#fff1e8" },
+    { emoji: "👥", name: "Group workshops",      desc: "Run a cohort with a seat limit and a single checkout.",       tint: "#fdf3f3" },
+    { emoji: "🔑", name: "Community memberships",desc: "Recurring access to your paid community or feed.",            tint: "#f3f6f2" },
   ];
 
-  document.getElementById("products").innerHTML = PRODUCTS.map((p) => `
+  document.getElementById("offerings").innerHTML = OFFERINGS.map((o) => `
     <article class="card">
-      <div class="shot" style="background:${p.tint}">${p.emoji}</div>
+      <div class="shot" style="background:${o.tint}">${o.emoji}</div>
       <div class="body">
-        <p class="name">${p.name}</p>
-        <p class="price">${p.price}</p>
+        <p class="name">${o.name}</p>
+        <p class="desc">${o.desc}</p>
       </div>
     </article>`).join("");
 
   const APP_ORIGIN = new URLSearchParams(location.search).get("app") || "http://localhost:3000";
-  const KEY_STORE = "touchline.widget_key";
+  const KEY_STORE = "superprofile.widget_key";
   const VISITOR_STORE = "intercom.visitor";
   const panel = document.getElementById("demo-controls");
+
+  document.getElementById("help-link").href = `${APP_ORIGIN}/help/superprofile`;
 
   function inject(key) {
     const existing = document.getElementById("intercom-widget-script");
