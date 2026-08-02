@@ -81,14 +81,10 @@ async def open_session(request: Request, body: SessionRequest, db: SessionDep) -
 @router.get("/conversations", response_model=ThreadList)
 async def list_threads(visitor: Visitor) -> ThreadList:
     rows = await service.conversations_for(visitor.db, visitor.customer)
-    return ThreadList(
-        items=[thread_out(row.conversation, row.opening, row.unread) for row in rows]
-    )
+    return ThreadList(items=[thread_out(row.conversation, row.opening, row.unread) for row in rows])
 
 
-@router.post(
-    "/conversations", response_model=ThreadDetail, status_code=status.HTTP_201_CREATED
-)
+@router.post("/conversations", response_model=ThreadDetail, status_code=status.HTTP_201_CREATED)
 async def start_thread(visitor: Visitor, body: SendRequest) -> ThreadDetail:
     ratelimit.enforce(ratelimit.WIDGET_START, str(visitor.customer.id))
 
@@ -127,9 +123,7 @@ async def read_thread(
 
 
 @router.post("/conversations/{conversation_id}/messages", response_model=ChatMessage)
-async def send_message(
-    visitor: Visitor, conversation_id: int, body: SendRequest
-) -> ChatMessage:
+async def send_message(visitor: Visitor, conversation_id: int, body: SendRequest) -> ChatMessage:
     ratelimit.enforce(ratelimit.WIDGET_SEND, str(visitor.customer.id))
 
     conversation = await service.conversation_of(visitor.db, visitor.customer, conversation_id)
