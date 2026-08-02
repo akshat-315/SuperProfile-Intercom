@@ -21,8 +21,10 @@ class Settings(BaseSettings):
     app_url: str = "http://localhost:3000"
 
     resend_api_key: str = ""
+    resend_webhook_secret: str = ""
     email_domain: str = "aksht.dev"
     email_from: str = ""
+    inbound_domain: str = ""
 
     @property
     def is_production(self) -> bool:
