@@ -6,7 +6,30 @@ from app.logging import get_logger
 log = get_logger(__name__)
 
 RESEND_URL = "https://api.resend.com/emails"
+RECEIVING_URL = "https://api.resend.com/emails/receiving"
 TIMEOUT_SECONDS = 10.0
+
+
+class MailUnavailable(Exception):
+    pass
+
+
+async def fetch_received(email_id: str) -> dict:
+    if not settings.mail_configured:
+        raise MailUnavailable("no mail credentials configured")
+
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            response = await client.get(
+                f"{RECEIVING_URL}/{email_id}",
+                headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        raise MailUnavailable(f"{type(exc).__name__}: {exc}") from exc
+
+    if response.status_code >= 400:
+        raise MailUnavailable(f"resend returned {response.status_code}: {response.text[:200]}")
+    return response.json()
 
 
 async def send(*, to: str, subject: str, html: str, text: str) -> bool:

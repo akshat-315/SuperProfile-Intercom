@@ -25,6 +25,11 @@ async def inbound_email(request: Request, db: SessionDep) -> Response:
         log.info("inbound.already_stored", message_id=message_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    await inbound.accept(db, email_id)
-    await db.commit()
+    try:
+        await inbound.accept(db, email_id)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        log.exception("inbound.not_queued", email_id=email_id)
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
