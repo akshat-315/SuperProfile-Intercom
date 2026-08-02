@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from app.deps import InWorkspace
 from app.errors import AppError
-from app.models import RESOLVED, STATUSES, Conversation, Message, User
+from app.models import EMAIL, RESOLVED, STATUSES, Conversation, Message, User
 from app.schemas.inbox import (
     AssigneeOut,
     AssignRequest,
@@ -17,7 +17,7 @@ from app.schemas.inbox import (
     SnoozeRequest,
     StatusRequest,
 )
-from app.services import events
+from app.services import events, outbox
 from app.services import inbox as service
 from app.services.security import utcnow
 
@@ -132,6 +132,12 @@ async def reply(conversation_id: int, body: ReplyRequest, signed_in: InWorkspace
         client_msg_id=body.client_msg_id,
         now=now,
     )
+
+    if conversation.channel == EMAIL and message.external_id is None:
+        message.external_id = outbox.new_message_id()
+        await outbox.queue_reply(
+            signed_in.db, message=message, workspace_id=conversation.workspace_id
+        )
 
     if body.snooze_until is not None:
         await service.snooze(signed_in.db, conversation, _aware(body.snooze_until))

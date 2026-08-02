@@ -32,23 +32,38 @@ async def fetch_received(email_id: str) -> dict:
     return response.json()
 
 
-async def send(*, to: str, subject: str, html: str, text: str) -> bool:
+async def send(
+    *,
+    to: str,
+    subject: str,
+    html: str,
+    text: str,
+    sender: str | None = None,
+    reply_to: str | None = None,
+    headers: dict[str, str] | None = None,
+) -> bool:
     if not settings.mail_configured:
         log.warning("mail.not_configured", to=to, subject=subject)
         return False
+
+    body: dict = {
+        "from": sender or settings.sender,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }
+    if reply_to:
+        body["reply_to"] = reply_to
+    if headers:
+        body["headers"] = headers
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
             response = await client.post(
                 RESEND_URL,
                 headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={
-                    "from": settings.sender,
-                    "to": [to],
-                    "subject": subject,
-                    "html": html,
-                    "text": text,
-                },
+                json=body,
             )
     except httpx.HTTPError as exc:
         log.error("mail.send_failed", to=to, error=f"{type(exc).__name__}: {exc}")
